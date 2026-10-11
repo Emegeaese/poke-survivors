@@ -9,13 +9,13 @@
  * Si se pone a null, el juego funciona en modo local (sólo en el navegador).
  */
 G.FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyD4YpfZCVUmJJbWPLPmYo6Lyxhsg0wMAKc',
-  authDomain: 'pokesurvivor-jpter.firebaseapp.com',
-  projectId: 'pokesurvivor-jpter',
-  storageBucket: 'pokesurvivor-jpter.firebasestorage.app',
-  messagingSenderId: '955377776652',
-  appId: '1:955377776652:web:213d0107d3c36aa0fe5629',
-  databaseURL: 'https://pokesurvivor-jpter-default-rtdb.europe-west1.firebasedatabase.app'
+  apiKey: 'AIzaSyAACmZtUVozdXcyhO8vSJ9N9KFh0_qSkmA',
+  authDomain: 'pokesurvivors.firebaseapp.com',
+  projectId: 'pokesurvivors',
+  storageBucket: 'pokesurvivors.firebasestorage.app',
+  messagingSenderId: '365955449851',
+  appId: '1:365955449851:web:8d8072fbe93c5fa257815e',
+  databaseURL: 'https://pokesurvivors-default-rtdb.firebaseio.com'
 };
 
 /* Ejemplo de cómo debe quedar:
