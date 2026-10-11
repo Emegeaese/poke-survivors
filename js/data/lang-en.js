@@ -428,7 +428,7 @@ G.I18n.add({
   'Fan game gratuito de supervivencia con 966 Pokémon de las 9 regiones: elige tu compañero, sobrevive a las hordas, evoluciona tus ataques, enfréntate a legendarios y juega en cooperativo con hasta 4 amigos.': 'A free survival fan game with 966 Pokémon from all 9 regions: choose your partner, survive the hordes, evolve your moves, take on legendaries and play co-op with up to 4 friends.',
   'Guía del juego': 'Game guide',
   // donaciones
-  'Apoyar': 'Support', 'Apoyar el proyecto': 'Support the project', 'Donar en Ko-fi': 'Donate on Ko-fi', 'Más información': 'More info',
+  'Más información': 'More info',
   'PokéSurvivor es y será': 'PokéSurvivor is and will stay', 'gratis': 'free',
   ', sin anuncios ni compras. Si quieres ayudar a que siga en línea, puedes hacer una': ', with no ads or purchases. If you\'d like to help keep it online, you can make a',
   'donación voluntaria': 'voluntary donation', ': todo el dinero se usa para los': ': all the money goes to the', 'servidores y el dominio': 'servers and the domain', ', nada más.': ', nothing else.',
@@ -438,7 +438,7 @@ G.I18n.add({
   'Cuanta más gente juega, más cuestan los servidores. Lo que sobre se guarda para los gastos de los meses siguientes.': 'The more people play, the more the servers cost. Anything left over is saved for the following months\' costs.',
   'Juego de fans {x}: sin anuncios ni compras. Pokémon y sus personajes son propiedad de Nintendo, Creatures y GAME FREAK; este proyecto no está afiliado a ellos.': 'Fan game {x}: no ads or purchases. Pokémon and its characters are owned by Nintendo, Creatures and GAME FREAK; this project is not affiliated with them.',
   ': sin anuncios ni compras. Pokémon y sus personajes son propiedad de Nintendo, Creatures y GAME FREAK; este proyecto no está afiliado a ellos.': ': no ads or purchases. Pokémon and its characters are owned by Nintendo, Creatures and GAME FREAK; this project is not affiliated with them.',
-  '. No tiene anuncios ni compras. Se puede apoyar con donaciones voluntarias, que se usan sólo para pagar los servidores y el dominio, y que no dan ninguna ventaja en el juego.': '. It has no ads or purchases. You can support it with voluntary donations, which are used only to pay for the servers and the domain and give no advantage in the game.', 'Compañero': 'Partner', 'tickets y': 'tickets and', 'directamente': 'directly', 'Tienes': 'You have', 'Movimientos que puede aprender': 'Moves it can learn',
+  '. No tiene anuncios, compras ni donaciones.': '. It has no ads or purchases. You can support it with voluntary donations, which are used only to pay for the servers and the domain and give no advantage in the game.', 'Compañero': 'Partner', 'tickets y': 'tickets and', 'directamente': 'directly', 'Tienes': 'You have', 'Movimientos que puede aprender': 'Moves it can learn',
   'Juego de fans {x} — sin anuncios ni pagos.': 'Fan game {x} — no ads or payments.', 'Código Cero': 'Type: Null', 'Pokédex: todos los Pokémon jugables': 'Pokédex: every playable Pokémon',
 
   // ---------------- 2026-10-10: grietas, jefes, pantalla de inicio, movimientos nuevos ----------------

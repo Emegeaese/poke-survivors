@@ -67,7 +67,7 @@ GitHub Pages se actualiza solo en uno o dos minutos.
 
 ## Recordatorios
 
-- **Nada de dinero**: ni anuncios, ni donaciones a cambio de nada, ni pagos.
+- **Nada de dinero**: ni anuncios, ni donaciones, ni pagos.
   Lo exige la licencia de los sprites (CC BY-NC) y es lo que más reduce el
   riesgo de que Nintendo pida retirarlo.
 - Si llega una reclamación de derechos al correo del aviso legal, atiéndela
