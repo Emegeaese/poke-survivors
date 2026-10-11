@@ -10,8 +10,7 @@ import struct, os
 
 U = 112                 # un píxel de la cuadrícula = 112 unidades (UPM 1000)
 W, H = 5, 7
-ADV = 700               # ancho de avance
-LSB = 70                 # margen izquierdo
+PAD = 46                 # margen a cada lado del dígito (unidades); el ancho de avance sale de cada glifo
 UPM, ASC, DESC = 1000, 800, -200
 BOLD = 6                 # los trazos se engordan un poco (unidades) para que se vean firmes
 
@@ -31,7 +30,10 @@ ORDER = '0123456789'
 
 
 def glyph(rows):
-    """Contornos: un rectángulo por tramo horizontal de píxeles (sentido horario)."""
+    """Contornos: un rectángulo por tramo horizontal de píxeles (sentido horario).
+    Devuelve (rectángulos, ancho de avance): cada dígito ocupa lo que mide (el 1 es más estrecho)."""
+    cols = [c for row in rows for c, v in enumerate(row) if v == '#']
+    c0, c1 = min(cols), max(cols) + 1
     rects = []
     for r, row in enumerate(rows):
         y1 = (H - r) * U            # arriba de la fila
@@ -42,10 +44,10 @@ def glyph(rows):
                 s = c
                 while c < W and row[c] == '#':
                     c += 1
-                rects.append((LSB + s * U, y0 - BOLD, LSB + c * U, y1 + BOLD))
+                rects.append((PAD + (s - c0) * U - BOLD, y0 - BOLD, PAD + (c - c0) * U + BOLD, y1 + BOLD))
             else:
                 c += 1
-    return rects
+    return rects, (c1 - c0) * U + 2 * PAD
 
 
 def glyph_bytes(rects):
@@ -80,10 +82,12 @@ def checksum(b):
 def build():
     glyphs = [b'']                                    # .notdef vacío
     boxes = [(0, 0, 0, 0)]
+    advs = [500]
     maxp_pts = maxp_con = 0
     for ch in ORDER:
-        data, bb, n, c = glyph_bytes(glyph(DIGITS[ch]))
-        glyphs.append(data); boxes.append(bb)
+        rects, adv = glyph(DIGITS[ch])
+        data, bb, n, c = glyph_bytes(rects)
+        glyphs.append(data); boxes.append(bb); advs.append(adv)
         maxp_pts = max(maxp_pts, n); maxp_con = max(maxp_con, c)
     ng = len(glyphs)
 
@@ -92,13 +96,14 @@ def build():
     for g in glyphs:
         loca += struct.pack('>I', off); off += len(g)
     loca += struct.pack('>I', off)
-    hmtx = struct.pack('>Hh', ADV // 2, 0) + b''.join(struct.pack('>Hh', ADV, LSB) for _ in ORDER)
+    hmtx = struct.pack('>Hh', advs[0], 0) + b''.join(struct.pack('>Hh', a, b[0]) for a, b in zip(advs[1:], boxes[1:]))
+    ADV = max(advs)
 
     xmin = min(b[0] for b in boxes[1:]); ymin = min(b[1] for b in boxes[1:])
     xmax = max(b[2] for b in boxes[1:]); ymax = max(b[3] for b in boxes[1:])
     head = struct.pack('>IIIIHHqqhhhhHHhhh', 0x00010000, 0x00010000, 0, 0x5F0F3CF5, 0x000B, UPM,
                        0, 0, xmin, ymin, xmax, ymax, 0, 8, 2, 1, 0)
-    hhea = struct.pack('>IhhhHhhhhhhhhhhhH', 0x00010000, ASC, DESC, 0, ADV, LSB, ADV - (LSB + W * U), xmax,
+    hhea = struct.pack('>IhhhHhhhhhhhhhhhH', 0x00010000, ASC, DESC, 0, ADV, xmin, PAD, xmax,
                        1, 0, 0, 0, 0, 0, 0, 0, ng)
     maxp = struct.pack('>IHHHHHHHHHHHHHH', 0x00010000, ng, maxp_pts, maxp_con, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0)
     os2 = (struct.pack('>HhHHH', 3, ADV, 400, 5, 0)
