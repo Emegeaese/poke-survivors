@@ -400,6 +400,24 @@ G.Game = (() => {
 
   let deathT = 0;
 
+  /** Compañeros vivos (tú no, si estás caído) a los que se puede mirar. */
+  function specCandidates() {
+    const c = G.Coop.puppets().filter(p => !p.dead && p.uid);
+    if (G.Coop.local && !G.Coop.local.dead) c.unshift(G.Coop.local);
+    return c;
+  }
+
+  /** Caído en grupo: la cámara sigue a un compañero vivo (Tab, E o clic para cambiar). */
+  function spectate() {
+    const c = specCandidates();
+    if (!c.length) { G.Coop.setSpec(null); return null; }
+    let i = c.findIndex(p => p.uid === G.Coop.spec);
+    if (G.Input.tap('tab') || G.Input.tap('keye') || G.Input.tap('click') || i < 0) i = (i + 1) % c.length;
+    const t = c[i];
+    G.Coop.setSpec(t.uid);
+    return t;
+  }
+
   let frameDt = 0, speedK = 1;
   let fpsShown = 60, fpsAcc = 0, fpsN = 0;
   function loop(ts) {
@@ -457,7 +475,8 @@ G.Game = (() => {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
       if (pl.dead) reviveTick(dt);
     }
-    G.Camera.follow(pl.x, pl.y, dt);
+    const watch = coop && pl.dead ? spectate() : (G.Coop.setSpec(null), null);
+    G.Camera.follow(watch ? watch.x : pl.x, watch ? watch.y : pl.y, dt);
     G.World.update(dt, G.Camera);
 
     const all = everyone();

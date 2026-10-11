@@ -420,6 +420,14 @@ G.HUD = (() => {
       ctx.strokeText(msg, w / 2, h * 0.62);
       ctx.fillStyle = '#ffb0b8';
       ctx.fillText(msg, w / 2, h * 0.62);
+      const sn = G.Coop.spec && G.Coop.nameOf(G.Coop.spec);
+      if (sn) {
+        ctx.font = F(700, 15);
+        const m2 = 'Viendo a ' + sn + '  ·  Tab / clic: cambiar de cámara';
+        ctx.strokeText(m2, w / 2, h * 0.62 + 40);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(m2, w / 2, h * 0.62 + 40);
+      }
       const f = (pl.reviveT || 0) / G.Player.REVIVE_TIME;
       if (f > 0) bar(ctx, w / 2 - 110, h * 0.62 + 12, 220, 10, f, '#5fe08a');
       ctx.restore();

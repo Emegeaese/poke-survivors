@@ -22,6 +22,7 @@ G.Input = (() => {
   addEventListener('blur', () => { down.clear(); });
   addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
   addEventListener('mousedown', () => mdown = true);
+  addEventListener('pointerdown', () => pressed.add('click'));   // clic o toque (espectador: cambiar de cámara)
   addEventListener('mouseup', () => mdown = false);
 
   return {

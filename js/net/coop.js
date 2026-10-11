@@ -30,6 +30,7 @@ G.Coop = (() => {
   let api = {};                         // callbacks del juego (game.js)
   let waiting = new Set();              // subida de nivel: quién falta por elegir
   let members = [];
+  let spec = null;                      // uid al que miras mientras estás caído (null = nadie)
 
   // ---------------- escalado de dificultad ----------------
 
@@ -51,7 +52,7 @@ G.Coop = (() => {
     api = cb;
     members = cfg.members;
     mates.clear();
-    outEv = []; flushT = 0; waiting = new Set();
+    outEv = []; flushT = 0; waiting = new Set(); spec = null;
     cfg.members.forEach((m, i) => {
       const x = (i - (cfg.members.length - 1) / 2) * 34, y = 0;
       if (m.uid === me) { pl.x = x; pl.y = y; pl.uid = me; pl.coopHost = host; pl.tagColor = COLORS[i]; return; }
@@ -67,7 +68,7 @@ G.Coop = (() => {
 
   function end() {
     active = false; host = false; local = null;
-    mates.clear(); outEv = []; waiting = new Set();
+    mates.clear(); outEv = []; waiting = new Set(); spec = null;
   }
 
   /** Te vas de la partida (los demás siguen). */
@@ -132,10 +133,20 @@ G.Coop = (() => {
   function emitNear(ev, x, y, except) {
     for (const m of mates.values()) {
       if (!m.connected || m.uid === except) continue;
-      if (G.U.dist2(m.pl.x, m.pl.y, x, y) > 700 * 700) continue;
+      const f = focusOf(m);
+      if (G.U.dist2(f.x, f.y, x, y) > 700 * 700) continue;
       if (m.q.length > 400) continue;
       m.q.push(ev);
     }
+  }
+
+  /** Dónde mira un invitado: su Pokémon, o el compañero al que espía si está caído. */
+  function focusOf(m) {
+    if (m.spec && m.pl.net && m.pl.net.dead) {
+      const t = m.spec === me ? local : (mates.get(m.spec) || {}).pl;
+      if (t && !t.dead) return t;
+    }
+    return m.pl;
   }
 
   function enemyList(near) {
@@ -158,14 +169,14 @@ G.Coop = (() => {
     }
     const ev = m.q; m.q = [];
     return { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
-             p, e: enemyList(m.pl), ev };
+             p, e: enemyList(focusOf(m)), ev };
   }
 
   function flushAll() { for (const m of mates.values()) if (m.connected) G.Net.send(m.uid, hostFrame(m)); }
 
   function flushClient(force) {
     if (!force && !outEv.length && flushT > 0) return;
-    G.Net.toHost({ k: 'f', p: myState(), ev: outEv });
+    G.Net.toHost({ k: 'f', p: myState(), ev: outEv, sp: spec || 0 });
     outEv = [];
   }
 
@@ -184,7 +195,7 @@ G.Coop = (() => {
       flushT -= dt;
       if (flushT <= 0) {
         flushT = G.Net.slow(hostUid) ? RATE_SLOW : RATE_FAST;
-        G.Net.toHost({ k: 'f', p: myState(), ev: outEv });
+        G.Net.toHost({ k: 'f', p: myState(), ev: outEv, sp: spec || 0 });
         outEv = [];
       }
     }
@@ -220,6 +231,7 @@ G.Coop = (() => {
   function onClientFrame(from, msg) {
     const m = mates.get(from);
     if (!m || !m.connected) return;
+    m.spec = msg.sp || null;
     if (msg.p) { m.state = msg.p; m.pl.net = readState(msg.p); m.xpMul = m.pl.net.xpMul || 1; }
     for (const ev of msg.ev || []) {
       switch (ev[0]) {
@@ -413,6 +425,10 @@ G.Coop = (() => {
     get members() { return members; },
     get active() { return active; },
     get isHost() { return active && host; },
-    get local() { return local; }
+    get local() { return local; },
+    /** Espectador: a quién miras (uid) y su nombre. */
+    get spec() { return spec; },
+    setSpec(u) { spec = u || null; },
+    nameOf(u) { if (u === me) return (members.find(x => x.uid === u) || {}).name || ''; const m = mates.get(u); return m ? m.name : ''; }
   };
 })();
