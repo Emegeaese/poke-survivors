@@ -146,9 +146,10 @@ G.SettingsUI = (() => {
     const out = $('set-logout'); if (out) out.onclick = () => { close(); leave(); };
     const del = $('set-delete');
     if (del) del.onclick = async () => {
-      if (!confirm('Se borrarán tu cuenta y toda tu partida, para siempre. ¿Seguro?')) return;
+      const ok = await G.UI.confirmDelete();
+      if (!ok) return;
       del.disabled = true;
-      const r = await G.DB.deleteAccount();
+      const r = await G.DB.deleteAccount(ok.pass);
       if (!r.ok) { $('set-msg').textContent = r.error; del.disabled = false; return; }
       close();
       G.UI.toast('Cuenta borrada');
