@@ -109,7 +109,7 @@ G.MenuUI = (() => {
       tabs.appendChild(b);
     });
 
-    const F = [['all', 'Todos'], ['own', 'Tengo'], ['miss', 'Me faltan'], ['shiny', 'Shiny'],
+    const F = [['all', 'Todos'], ['own', 'Tengo'], ['miss', 'Me faltan'], ['shiny', 'Shiny'], ['dup', 'Repetidos'],
                ['5', 5], ['4', 4], ['3', 3], ['2', 2], ['1', 1]];
     const fb = $('dex-filters');
     fb.innerHTML = '';
@@ -121,8 +121,62 @@ G.MenuUI = (() => {
       c.onclick = () => { dexFilter = k; openDex(); };
       fb.appendChild(c);
     }
+    // Vender todos los repetidos de golpe (nunca la última copia de cada uno).
+    const worth = sellAllValue();
+    if (worth.n) {
+      const sb = document.createElement('button');
+      sb.className = 'btn small gold';
+      sb.innerHTML = `Vender ${worth.n} repetidos · <span class="coin"></span> ${worth.coins}`;
+      sb.onclick = () => {
+        if (!confirm(`¿Vender ${worth.n} copias repetidas por ${worth.coins} monedas? Siempre te quedas con una de cada.`)) return;
+        sellAll();
+      };
+      fb.appendChild(sb);
+    }
     renderGrid();
     showDetail(dexSel);
+  }
+
+  /** Cuántas copias sobran y cuánto dan. */
+  function sellAllValue() {
+    const s = G.DB.save;
+    let n = 0, coins = 0;
+    for (const p of G.DEX) {
+      const a = G.DB.sellable(s, p.dex, false), b = G.DB.sellable(s, p.dex, true);
+      n += a + b; coins += a * G.Gacha.sellValue(p.rarity, false) + b * G.Gacha.sellValue(p.rarity, true);
+    }
+    return { n, coins };
+  }
+
+  function sellAll() {
+    const s = G.DB.save;
+    const w = sellAllValue();
+    for (const p of G.DEX) {
+      for (const sh of [false, true]) {
+        for (let k = G.DB.sellable(s, p.dex, sh); k > 0; k--) G.DB.removeCopy(s, p.dex, sh);
+      }
+    }
+    s.coins += w.coins;
+    G.DB.commit(true);
+    G.Audio.sfx('buy');
+    G.UI.refreshCoins();
+    G.UI.toast(`Vendidas ${w.n} copias: +${w.coins} monedas`);
+    openDex();
+  }
+
+  /** Vende `k` copias de una variante. */
+  function sellCopies(dex, shiny, k) {
+    const s = G.DB.save, p = G.DEX_BY[dex];
+    k = Math.min(k, G.DB.sellable(s, dex, shiny));
+    if (k <= 0) return;
+    for (let i = 0; i < k; i++) G.DB.removeCopy(s, dex, shiny);
+    const coins = k * G.Gacha.sellValue(p.rarity, shiny);
+    s.coins += coins;
+    G.DB.commit(true);
+    G.Audio.sfx('buy');
+    G.UI.refreshCoins();
+    G.UI.toast(`${p.name}${shiny ? ' shiny' : ''}: vendido ×${k} (+${coins} monedas)`);
+    openDex();
   }
 
   function renderGrid() {
@@ -135,11 +189,14 @@ G.MenuUI = (() => {
       if (dexFilter === 'own' && !own) continue;
       if (dexFilter === 'miss' && own) continue;
       if (dexFilter === 'shiny' && !sh) continue;
+      if (dexFilter === 'dup' && !(G.DB.sellable(s, p.dex, false) || G.DB.sellable(s, p.dex, true))) continue;
       if (/^\d$/.test(dexFilter) && p.rarity !== +dexFilter) continue;
 
       const cell = document.createElement('div');
       cell.className = 'cell' + (own ? '' : ' locked') + (p.dex === dexSel ? ' on' : '');
       cell.insertAdjacentHTML('beforeend', `<span class="no">${String(p.dex).padStart(3, '0')}</span>`);
+      const cn = G.DB.copies(s, p.dex, false) + G.DB.copies(s, p.dex, true);
+      if (cn > 1 + (sh ? 1 : 0)) cell.insertAdjacentHTML('beforeend', `<span class="dup-n" title="Copias repetidas">×${G.DB.copies(s, p.dex, false)}${sh && G.DB.copies(s, p.dex, true) > 1 ? ' · ★×' + G.DB.copies(s, p.dex, true) : ''}</span>`);
       if (p.dex === s.partner) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Compañero">${G.Icons.html('crown', 14)}</span>`);
       else if (sh) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Tienes su shiny">${G.Icons.html('shiny', 12)}</span>`);
       const useShiny = sh && p.dex === s.partner && s.partnerShiny;
@@ -154,6 +211,20 @@ G.MenuUI = (() => {
       grid.appendChild(cell);
     }
     if (!grid.children.length) grid.innerHTML = '<p class="sub" style="grid-column:1/-1">Ninguno con este filtro.</p>';
+  }
+
+  /** Bloque de la ficha: cuántas copias tienes de la variante que ves y cómo venderlas. */
+  function copiesBlock(s, dex) {
+    const sh = viewShiny, c = G.DB.copies(s, dex, sh), p = G.DEX_BY[dex];
+    if (!c) return '';
+    const sell = G.DB.sellable(s, dex, sh), v = G.Gacha.sellValue(p.rarity, sh);
+    let h = `<div class="dups"><div>Copias${sh ? ' shiny' : ''}: <b class="gold">×${c}</b></div>`;
+    if (sell) {
+      h += `<div class="row" style="gap:6px;margin-top:6px">
+        <button class="btn small" data-sfx="none" data-sell="1">Vender 1 · <span class="coin"></span> ${v}</button>
+        ${sell > 1 ? `<button class="btn small" data-sfx="none" data-sell="${sell}">Vender ${sell} · <span class="coin"></span> ${v * sell}</button>` : ''}</div>`;
+    } else h += `<div class="sub" style="font-size:13px">Es tu única copia: no se puede vender.</div>`;
+    return h + '</div>';
   }
 
   // Variante que se está viendo en la ficha (normal o shiny).
@@ -193,6 +264,7 @@ G.MenuUI = (() => {
         <p style="font-size:14px;margin:10px 0 4px">Empieza con <b class="gold">${G.Moves.BY_ID[G.startMoveOf(dex)].name}</b></p>
         <p class="move-icons" title="Movimientos que puede aprender">
           ${G.Moves.poolFor(p).map(id => `<span title="${G.Moves.BY_ID[id].name}">${G.Icons.html('move:' + id, 16)}</span>`).join('')}</p>
+        ${copiesBlock(s, dex)}
         ${usingThis
           ? '<button class="btn grow" disabled style="width:100%">Es tu compañero</button>'
           : `<button id="dex-pick" class="btn gold" data-sfx="confirm" style="width:100%">Elegir de compañero${viewShiny ? ' (shiny)' : ''}</button>`}
@@ -204,6 +276,9 @@ G.MenuUI = (() => {
     G.UI.sprite($('dex-big'), dex, { lively: own, spin: own, silhouette: !own, scale: 3, hero: true, shiny: own && viewShiny });
     box.querySelectorAll('.seg button').forEach(b => {
       b.onclick = () => { viewShiny = b.dataset.v === '1'; showDetail(dex); };
+    });
+    box.querySelectorAll('[data-sell]').forEach(b => {
+      b.onclick = () => sellCopies(dex, viewShiny, +b.dataset.sell);
     });
     const pick = $('dex-pick');
     if (pick) pick.onclick = () => {

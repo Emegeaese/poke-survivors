@@ -99,25 +99,20 @@ G.Gacha = (() => {
       const mon = G.U.pick(list);
       const shiny = G.Sprites.hasShiny(mon.dex) && (forceShiny > 0 ? (forceShiny--, true) : Math.random() < SHINY_RATE);
 
-      let isNew = false, refund = 0;
-      if (shiny) {
-        isNew = !save.shiny[mon.dex];
-        if (isNew) save.shiny[mon.dex] = { at: Date.now(), from: 'gacha' };
-        else refund = REFUND[rarity] * 3;
-        if (!save.owned[mon.dex]) save.owned[mon.dex] = { at: Date.now(), from: 'gacha' };
-      } else {
-        isNew = !save.owned[mon.dex];
-        if (isNew) save.owned[mon.dex] = { at: Date.now(), from: 'gacha' };
-        else refund = REFUND[rarity];
-      }
-      save.coins += refund;
-      out.push({ dex: mon.dex, rarity, shiny, isNew, refund });
+      // Un repetido ya no se convierte en monedas: queda como otra copia, que
+      // puedes vender (Pokémon > ficha) o conservar para intercambiarla.
+      const isNew = !G.DB.copies(save, mon.dex, shiny);
+      const n = G.DB.addCopy(save, mon.dex, shiny, 'gacha');
+      out.push({ dex: mon.dex, rarity, shiny, isNew, copies: n, value: sellValue(rarity, shiny) });
     }
     save.stats.pulls = (save.stats.pulls || 0) + n;
     return out;
   }
 
-  return { debugForceShiny(n = 1) { forceShiny = n; },
+  /** Monedas que da vender una copia repetida. */
+  const sellValue = (rarity, shiny) => REFUND[rarity] * (shiny ? 3 : 1);
+
+  return { sellValue, debugForceShiny(n = 1) { forceShiny = n; },
            costOf, RATES, PITY_5, SHINY_RATE, REFUND, RARITY_NAME, RARITY_COLOR, BANNERS,
            pool, featured, pull };
 })();

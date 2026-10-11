@@ -265,6 +265,29 @@
   </div>
 </section>
 
+<!-- ====== Intercambio con un amigo ====== -->
+<section id="scr-trade" class="scr dim hidden">
+  <div class="box wide">
+    <div class="row between"><h2 id="tr-title">Intercambio</h2><button class="btn small ghost" id="tr-back">Volver</button></div>
+    <div class="tr-offers">
+      <div class="tr-side"><h3>Tu oferta</h3><div id="tr-mine" class="tr-slot"></div></div>
+      <div class="tr-arrow">⇄</div>
+      <div class="tr-side"><h3 id="tr-their-title"></h3><div id="tr-theirs" class="tr-slot"></div></div>
+    </div>
+    <p id="tr-status" class="note"></p>
+    <div class="row" style="gap:8px;justify-content:center">
+      <button id="tr-accept" class="btn gold" data-sfx="confirm">Aceptar intercambio</button>
+      <button id="tr-cancel" class="btn ghost">Cancelar intercambio</button>
+    </div>
+    <h3 style="margin:12px 0 6px">Elige qué dar</h3>
+    <div class="row" style="gap:8px">
+      <input id="tr-search" class="field grow" maxlength="20" spellcheck="false" placeholder="Buscar por nombre">
+      <div class="seg" style="margin:0"><button data-v="0" class="on">Normal</button><button data-v="1">Shiny</button></div>
+    </div>
+    <div class="grid" id="tr-grid"></div>
+  </div>
+</section>
+
 <!-- ====== Sala (partida en grupo) ====== -->
 <section id="scr-lobby" class="scr dim hidden">
   <div class="box wide">
@@ -435,6 +458,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=4206323ef1"></script>
+<script defer src="js/app.min.js?v=9d9bc9f6e8"></script>
 </body>
 </html>

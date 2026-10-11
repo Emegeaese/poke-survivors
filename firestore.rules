@@ -5,6 +5,7 @@ rules_version = '2';
 //   names/{apodo}          reserva de apodos únicos (en minúsculas)
 //   profiles/{uid}         apodo público de cada jugador
 //   friendships/{a_b}      solicitudes y amistades entre dos jugadores
+//   trades/{a_b}           intercambio de Pokémon entre dos amigos
 //   runs/{uid}             cuándo empezó tu última partida (anti-trampas)
 //   lb/{tabla}/e/{id}      ranking de tiempo aguantado (marcas validadas)
 //   lbs/{tabla}            resumen con el top 50 de cada tabla
@@ -80,6 +81,55 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'at', 'names'])
         && request.resource.data.status == 'ok';
       allow delete: if signedIn() && me() in resource.data.users;
+    }
+
+    // ---------- intercambios ----------
+    // Un documento por pareja de amigos (mismo id que la amistad). Cada uno
+    // sólo escribe SU parte (o/ok/done); las dos mitades del cambio las aplica
+    // cada cliente en su propia partida. Mientras alguien haya terminado de
+    // aplicarlo, nadie puede retirar ofertas ni aceptaciones.
+    match /trades/{pid} {
+      function tShape(d) {
+        return d.keys().hasOnly(['users', 'names', 'c', 'o', 'ok', 'done', 'at'])
+          && d.users is list && d.users.size() == 2
+          && d.names is map && d.o is map && d.ok is map && d.done is map
+          && d.c is int
+          && d.at == request.time;
+      }
+      function tOffer(o) {
+        return !(me() in o)
+          || (o[me()].keys().hasOnly(['dex', 'sh']) && o[me()].dex is int && o[me()].sh is bool);
+      }
+
+      allow read: if signedIn() && (resource == null || me() in resource.data.users);
+
+      allow create: if signedIn()
+        && tShape(request.resource.data)
+        && request.resource.data.users[0] < request.resource.data.users[1]
+        && me() in request.resource.data.users
+        && pid == request.resource.data.users[0] + '_' + request.resource.data.users[1]
+        && request.resource.data.o.keys().hasOnly([me()])
+        && tOffer(request.resource.data.o)
+        && request.resource.data.ok.size() == 0
+        && request.resource.data.done.size() == 0
+        && get(/databases/$(database)/documents/friendships/$(pid)).data.status == 'ok';
+
+      allow update: if signedIn()
+        && me() in resource.data.users
+        && tShape(request.resource.data)
+        && request.resource.data.users == resource.data.users
+        && request.resource.data.names == resource.data.names
+        && request.resource.data.c == resource.data.c
+        && request.resource.data.o.diff(resource.data.o).affectedKeys().hasOnly([me()])
+        && request.resource.data.ok.diff(resource.data.ok).affectedKeys().hasOnly([me()])
+        && request.resource.data.done.diff(resource.data.done).affectedKeys().hasOnly([me()])
+        && tOffer(request.resource.data.o)
+        && (resource.data.done.size() == 0
+            || (request.resource.data.o == resource.data.o && request.resource.data.ok == resource.data.ok));
+
+      allow delete: if signedIn()
+        && me() in resource.data.users
+        && (resource.data.ok.size() < 2 || resource.data.done.size() == 2);
     }
 
     // ---------- ranking ----------

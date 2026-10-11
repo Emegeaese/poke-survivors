@@ -65,6 +65,7 @@
       };
       $('fr-room').onclick = () => G.LobbyUI.open();
       G.Social.on(() => { if (G.UI.isOpen('scr-friends')) render(); });
+      G.Trade.on(() => { if (G.UI.isOpen('scr-friends')) render(); });
     }
 
     function msg(t, bad) {
@@ -130,6 +131,9 @@
               if (r.ok) G.LobbyUI.open();
             });
           }
+          const t = G.Trade.get(f.uid), theirs = t && t.o && t.o[f.uid];
+          const waiting = theirs && !(t.ok && t.ok[G.Social.me.uid] === G.Trade.sigOf(t));
+          btn(waiting ? 'Intercambio ●' : 'Intercambiar', waiting ? 'gold' : '', () => G.TradeUI.open(f.uid));
           btn('Quitar', 'ghost', () => { if (confirm('¿Quitar a ' + f.name + ' de tus amigos?')) G.Social.remove(f.uid); });
         }
         box.appendChild(el);

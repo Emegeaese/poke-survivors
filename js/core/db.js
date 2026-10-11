@@ -63,6 +63,10 @@ G.DB = (() => {
       coins: START_COINS,
       owned: {},              // dex -> { at, from: 'starter'|'gacha'|'wild' }
       shiny: {},              // dex -> { at, from } — variantes shiny conseguidas
+                              // (en owned y shiny: n = copias si hay más de una, u = última vez que cambió n)
+      gone: {},               // dex -> fecha: ya no tienes ninguna copia normal (evita que la fusión la devuelva)
+      goneS: {},              // lo mismo para los shiny
+      tx: {},                 // intercambios ya aplicados: id -> clave (para no aplicarlos dos veces)
       partner: null,          // dex del Pokémon con el que juegas
       partnerShiny: false,    // jugar con su versión shiny (si la tienes)
       starter: null,          // dex que te tocó en el test
@@ -119,9 +123,20 @@ G.DB = (() => {
     for (const coll of ['owned', 'shiny']) {
       r[coll] = r[coll] || {};
       for (const k in older[coll] || {}) {
-        if (!r[coll][k] || (older[coll][k].at || 0) < (r[coll][k].at || 0)) r[coll][k] = older[coll][k];
+        const o = older[coll][k], m = r[coll][k];
+        if (!m) r[coll][k] = o;
+        // Misma entrada en las dos: gana la que se tocó después (copias); si empatan, la más antigua.
+        else if ((o.u || 0) > (m.u || 0)) r[coll][k] = o;
+        else if ((o.u || 0) === (m.u || 0) && (o.at || 0) < (m.at || 0)) r[coll][k] = o;
       }
     }
+    // Lo que se dio o vendió del todo no vuelve: la marca "gone" tapa las entradas anteriores a ella.
+    for (const [coll, g] of [['owned', 'gone'], ['shiny', 'goneS']]) {
+      const gm = r[g] = Object.assign({}, older[g], r[g]);
+      for (const k in older[g] || {}) gm[k] = Math.max(gm[k] || 0, older[g][k] || 0);
+      for (const k in gm) if (r[coll][k] && (r[coll][k].at || 0) <= gm[k]) delete r[coll][k];
+    }
+    r.tx = Object.assign({}, older.tx, r.tx);
     for (const k in older.upgrades || {}) r.upgrades[k] = Math.max(r.upgrades[k] || 0, older.upgrades[k]);
     r.pupg = r.pupg || {};
     for (const d in older.pupg || {}) {
@@ -565,6 +580,60 @@ G.DB = (() => {
 
   function ownsShiny(dex) { return !!(save && save.shiny && save.shiny[dex]); }
 
+  // ---------------- copias, venta e intercambio ----------------
+  // Cada entrada de owned / shiny es una copia (n ausente = 1). Las funciones
+  // reciben la partida (`sv`) para poder usarse también desde gacha.js.
+
+  const col = shiny => shiny ? 'shiny' : 'owned';
+  const gone = shiny => shiny ? 'goneS' : 'gone';
+
+  /** Cuántas copias tienes (0 si ninguna). */
+  function copies(sv, dex, shiny = false) {
+    const e = sv[col(shiny)] && sv[col(shiny)][dex];
+    return e ? (e.n || 1) : 0;
+  }
+
+  /** Suma una copia (crea la entrada si no la tenías). Devuelve las copias que tienes ahora. */
+  function addCopy(sv, dex, shiny, from) {
+    const c = sv[col(shiny)] = sv[col(shiny)] || {};
+    const now = Date.now();
+    const e = c[dex];
+    if (e) { e.n = (e.n || 1) + 1; e.u = now; return e.n; }
+    // `at` por delante de la marca "gone" por si ya la tuviste y la diste.
+    const g = (sv[gone(shiny)] || {})[dex] || 0;
+    c[dex] = { at: Math.max(now, g + 1), from: from || 'gacha', u: now };
+    if (shiny) addCopyNormalIfMissing(sv, dex, from);
+    return 1;
+  }
+  function addCopyNormalIfMissing(sv, dex, from) {
+    if (!copies(sv, dex, false)) addCopy(sv, dex, false, from);
+  }
+
+  /** Quita una copia. Si era la última, la entrada desaparece y queda la marca "gone". */
+  function removeCopy(sv, dex, shiny) {
+    const c = sv[col(shiny)], e = c && c[dex];
+    if (!e) return false;
+    const n = (e.n || 1) - 1;
+    if (n > 0) { e.n = n; e.u = Date.now(); return true; }
+    delete c[dex];
+    const g = sv[gone(shiny)] = sv[gone(shiny)] || {};
+    g[dex] = Date.now();
+    if (sv.partner == dex) {
+      if (shiny) sv.partnerShiny = false;
+      else if (!sv.owned[dex]) sv.partner = Number(Object.keys(sv.owned).find(d => G.DEX_BY[d]) || sv.starter || 25);
+    }
+    return true;
+  }
+
+  /** Copias que se pueden vender: todas menos una (el último no se vende). */
+  function sellable(sv, dex, shiny = false) { return Math.max(0, copies(sv, dex, shiny) - 1); }
+
+  /** Copias que se pueden dar en un intercambio. El normal que sostiene a tu shiny se queda. */
+  function tradable(sv, dex, shiny = false) {
+    if (shiny) return copies(sv, dex, true);
+    return Math.max(0, copies(sv, dex, false) - (copies(sv, dex, true) ? 1 : 0));
+  }
+
   /** Mejoras compradas para un Pokémon: { id -> nivel }. */
   function upgradesOf(dex) {
     if (!save) return {};
@@ -583,6 +652,7 @@ G.DB = (() => {
   return {
     ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow,
     owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
+    copies, addCopy, removeCopy, sellable, tradable,
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
     /** Acceso de bajo nivel para los módulos de red (sólo en modo nube). */

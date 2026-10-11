@@ -101,6 +101,7 @@ G.Social = (() => {
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('pagehide', onHide);
     listenFriends();
+    if (G.Trade) G.Trade.start(fb, uid);
     unInv = fb.fs.collection('inv').where('to', '==', uid).onSnapshot(snap => {
       snap.docChanges().forEach(ch => {
         const v = ch.doc.data();
@@ -134,6 +135,7 @@ G.Social = (() => {
     window.removeEventListener('pagehide', onHide);
     if (me) await fb.fs.collection('pres').doc(uid).delete().catch(() => {});
     if (why === 'delete') await deleteAll().catch(e => console.warn('[Social] borrar:', e));
+    if (G.Trade) G.Trade.stop();
     friends.clear(); invites.clear(); sentInv.clear(); pres.clear(); presAt = 0;
     me = null; started = false; fb = null; uid = null; playing = false;
     emit('stop');
@@ -146,6 +148,7 @@ G.Social = (() => {
     const del = async q => { const s = await q.get(); await Promise.all(s.docs.map(d => d.ref.delete().catch(() => {}))); };
     await step('amistades', () => del(fb.fs.collection('friendships').where('users', 'array-contains', uid)));
     await step('filas del ranking', () => G.Ranking.removeMine());
+    await step('intercambios', () => G.Trade.removeAll());
     await step('invitaciones', () => del(fb.fs.collection('inv').where('to', '==', uid)));
     await step('marcas', () => del(fb.fs.collectionGroup('e').where('uids', 'array-contains', uid)));
     await step('partida en curso', () => fb.fs.collection('runs').doc(uid).delete());

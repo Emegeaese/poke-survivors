@@ -71,6 +71,7 @@ jefe, la captura de un shiny salvaje y un shiny en el gacha.
 - **Jugar con amigos (hasta 4) y ranking:** con cuenta en la nube, menú
   **Amigos** (añadir por apodo, invitar a tu sala) y **Ranking** (tiempo
   aguantado: solo o grupo, de hoy a histórico, amigos, por Pokémon).
+- **Repetidos e intercambios:** un Pokémon repetido del gacha queda como copia (×2, ×3...). En la ficha puedes **venderla** (nunca la última) o conservarla. En **Amigos → Intercambiar** das un Pokémon y recibes otro, siempre uno por uno, también shiny. Necesita las reglas de `firestore.rules` publicadas.
 - **Publicar gratis en GitHub Pages:** [docs/PUBLICAR.md](docs/PUBLICAR.md).
 - Si se juega en dos ordenadores a la vez o sin conexión, las partidas se
   **fusionan**: las colecciones se unen (nunca se pierde un Pokémon ni un
