@@ -118,6 +118,7 @@ G.Game = (() => {
 
     if (coop) {
       G.Coop.begin(coop, pl, coopApi);
+      G.Social.holdRoom(true);
       G.Social.setPlaying(true);
     }
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
@@ -228,7 +229,7 @@ G.Game = (() => {
     const wasHost = !!pl.coopHost;
     const team = coop ? G.Coop.members.slice() : [];
     if (G.Coop.active) G.Coop.end();
-    if (coop) G.Social.setPlaying(false);
+    if (coop) { G.Social.setPlaying(false); G.Social.holdRoom(false); }
     state = 'over';
     G.Audio.music(null);
     G.Audio.sfx(dead ? 'gameover' : 'back');
@@ -761,6 +762,7 @@ G.Flow = {
   /** Al cerrar el resumen: a la sala si sigues en una, si no al menú. */
   afterRun() {
     if (G.Social.room) {
+      G.Social.holdRoom(false);
       if (G.Game.state !== 'ui') G.Game.toUI();
       G.Audio.music('village');
       if (G.Social.room.isHost) G.Social.setOpen(true);

@@ -10,6 +10,7 @@ import struct, os
 
 U = 112                 # un píxel de la cuadrícula = 112 unidades (UPM 1000)
 W, H = 5, 7
+PAD1 = 6                 # el 1 es más estrecho y su dibujo ya deja aire alrededor: casi sin margen
 PAD = 46                 # margen a cada lado del dígito (unidades); el ancho de avance sale de cada glifo
 UPM, ASC, DESC = 1000, 800, -200
 BOLD = 6                 # los trazos se engordan un poco (unidades) para que se vean firmes
@@ -29,7 +30,7 @@ DIGITS = {
 ORDER = '0123456789'
 
 
-def glyph(rows):
+def glyph(rows, pad=PAD):
     """Contornos: un rectángulo por tramo horizontal de píxeles (sentido horario).
     Devuelve (rectángulos, ancho de avance): cada dígito ocupa lo que mide (el 1 es más estrecho)."""
     cols = [c for row in rows for c, v in enumerate(row) if v == '#']
@@ -44,10 +45,10 @@ def glyph(rows):
                 s = c
                 while c < W and row[c] == '#':
                     c += 1
-                rects.append((PAD + (s - c0) * U - BOLD, y0 - BOLD, PAD + (c - c0) * U + BOLD, y1 + BOLD))
+                rects.append((pad + (s - c0) * U - BOLD, y0 - BOLD, pad + (c - c0) * U + BOLD, y1 + BOLD))
             else:
                 c += 1
-    return rects, (c1 - c0) * U + 2 * PAD
+    return rects, (c1 - c0) * U + 2 * pad
 
 
 def glyph_bytes(rects):
@@ -85,7 +86,7 @@ def build():
     advs = [500]
     maxp_pts = maxp_con = 0
     for ch in ORDER:
-        rects, adv = glyph(DIGITS[ch])
+        rects, adv = glyph(DIGITS[ch], PAD1 if ch == '1' else PAD)
         data, bb, n, c = glyph_bytes(rects)
         glyphs.append(data); boxes.append(bb); advs.append(adv)
         maxp_pts = max(maxp_pts, n); maxp_con = max(maxp_con, c)

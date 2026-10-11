@@ -309,6 +309,10 @@ G.Social = (() => {
       if (!room || room.id !== id) return;
       const m = s.val() || {};
       // El anfitrión siempre primero; el resto por orden de llegada.
+      // Si el servidor te borró de la sala tras un parpadeo de la conexión, te vuelves a apuntar.
+      if (!room.isHost && !m[uid] && m[room.host] && room.open) {
+        fb.rtdb.ref('rooms/' + id + '/m/' + uid).set(memberInfo()).then(watchRoomDisconnect).catch(() => {});
+      }
       room.members = Object.keys(m).map(k => Object.assign({ uid: k }, m[k]))
         .sort((a, b) => (a.uid === room.host ? -1 : b.uid === room.host ? 1 : (a.at || 0) - (b.at || 0)));
       emit('room');
@@ -327,6 +331,19 @@ G.Social = (() => {
     if (!room) return;
     const ref = room.isHost ? fb.rtdb.ref('rooms/' + room.id) : fb.rtdb.ref('rooms/' + room.id + '/m/' + uid);
     ref.onDisconnect().remove();
+  }
+
+  /**
+   * Durante una partida en grupo NO se borra tu plaza si la conexión con la base
+   * de datos parpadea: ese borrado automático dejaba al jugador sin permiso para
+   * mandar mensajes por el relé y, para los demás, se quedaba quieto y "vivo"
+   * mientras en su pantalla seguía jugando. Al acabar se vuelve a activar.
+   */
+  function holdRoom(on) {
+    if (!room || !fb) return;
+    const ref = room.isHost ? fb.rtdb.ref('rooms/' + room.id) : fb.rtdb.ref('rooms/' + room.id + '/m/' + uid);
+    if (on) ref.onDisconnect().cancel().catch(() => {});
+    else watchRoomDisconnect();
   }
 
   function detachRoom() {
@@ -475,7 +492,7 @@ G.Social = (() => {
 
   return {
     start, stop, claimNick, request, accept, remove, publishProfile, getProfile, profileData,
-    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setPlaying, refreshPresence,
+    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setPlaying, refreshPresence, holdRoom,
     invite, acceptInvite, declineInvite,
     on(fn) { listeners.add(fn); }, off(fn) { listeners.delete(fn); },
     get me() { return me; },

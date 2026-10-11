@@ -70,7 +70,7 @@ G.Coop = (() => {
       p.x = x; p.y = y;
       p.net = { x, y, ang: Math.PI / 2, walk: 0, hp: p.maxHp, maxHp: p.maxHp, dead: 0, mv: G.startMoveOf(mon.dex), ml: 1, mag: 78, aim: Math.PI / 2, rev: 0 };
       G.Sprites.preload([mon.dex], 8000, p.shiny);
-      mates.set(m.uid, { uid: m.uid, name: m.name, color: COLORS[i], pl: p, connected: true, q: [], flushT: 0, xpMul: 1 });
+      mates.set(m.uid, { uid: m.uid, name: m.name, color: COLORS[i], pl: p, connected: true, q: [], flushT: 0, xpMul: 1, last: performance.now() });
     });
   }
 
@@ -95,12 +95,18 @@ G.Coop = (() => {
 
   // ---------------- lista de jugadores ----------------
 
+  // Un compañero que lleva mucho sin mandar nada (pestaña dormida, red caída) deja de contar: no se
+  // le dibuja "vivo y quieto", no impide que acabe la partida ni se espera su carta de nivel.
+  // Si vuelve a mandar datos, vuelve solo.
+  const AWAY_MS = 15000;
+  const here = m => m.connected && (performance.now() - (m.last || 0) < AWAY_MS);
+
   function players() {
     const out = [local];
-    for (const m of mates.values()) if (m.connected) out.push(m.pl);
+    for (const m of mates.values()) if (here(m)) out.push(m.pl);
     return out;
   }
-  function puppets() { const out = []; for (const m of mates.values()) if (m.connected) out.push(m.pl); return out; }
+  function puppets() { const out = []; for (const m of mates.values()) if (here(m)) out.push(m.pl); return out; }
 
   /**
    * Multiplicador de la experiencia del equipo: la media de los bonus de
@@ -173,7 +179,7 @@ G.Coop = (() => {
     const st = api.team();
     const p = { [me]: myState() };
     for (const o of mates.values()) {
-      if (o.connected && o.uid !== m.uid && o.state) p[o.uid] = o.state;
+      if (here(o) && o.uid !== m.uid && o.state) p[o.uid] = o.state;
     }
     const ev = m.q; m.q = [];
     return { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
@@ -245,6 +251,7 @@ G.Coop = (() => {
   function onClientFrame(from, msg) {
     const m = mates.get(from);
     if (!m || !m.connected) return;
+    m.last = performance.now();
     m.spec = msg.sp || null;
     if (msg.p) { m.state = msg.p; m.pl.net = readState(msg.p); m.xpMul = m.pl.net.xpMul || 1; }
     for (const ev of msg.ev || []) {
@@ -289,7 +296,7 @@ G.Coop = (() => {
                    t1: (msg.tk || [])[0], t10: (msg.tk || [])[1] });
     for (const u in msg.p || {}) {
       const m = mates.get(u);
-      if (m) m.pl.net = readState(msg.p[u]);
+      if (m) { m.pl.net = readState(msg.p[u]); m.last = performance.now(); }
     }
     const now = performance.now();
     for (const a of msg.e || []) {
@@ -414,7 +421,7 @@ G.Coop = (() => {
 
   function levelStart(level) {
     waiting = new Set([me]);
-    for (const m of mates.values()) if (m.connected) waiting.add(m.uid);
+    for (const m of mates.values()) if (here(m)) waiting.add(m.uid);
     lvSerial++; lvStart = performance.now();
     emit(['lu', level, lvSerial]);
     flushAll();
