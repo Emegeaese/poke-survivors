@@ -105,7 +105,7 @@ G.TradeUI = (() => {
       const cell = document.createElement('div');
       cell.className = 'cell' + (mine && mine.dex === p.dex && !!mine.sh === shinyTab ? ' on' : '') + (locked ? ' res' : '');
       cell.insertAdjacentHTML('beforeend', `<span class="no">${String(p.dex).padStart(3, '0')}</span>`);
-      if (n > 1) cell.insertAdjacentHTML('beforeend', `<span class="dup-n">×${n}</span>`);
+      if (n > 1) cell.insertAdjacentHTML('beforeend', `<div class="dups-tags"><span class="dup-n${shinyTab ? ' sh' : ''}">${shinyTab ? G.Icons.html('shiny', 10) : ''}×${n}</span></div>`);
       cell.appendChild(G.UI.spriteCanvas(p.dex, 92, 80, { scale: 2, shadow: true, shiny: shinyTab }));
       cell.insertAdjacentHTML('beforeend', `<b>${esc(p.name)}</b>${G.UI.stars(p.rarity, 9)}`);
       cell.onclick = async () => {

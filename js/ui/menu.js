@@ -195,8 +195,12 @@ G.MenuUI = (() => {
       const cell = document.createElement('div');
       cell.className = 'cell' + (own ? '' : ' locked') + (p.dex === dexSel ? ' on' : '');
       cell.insertAdjacentHTML('beforeend', `<span class="no">${String(p.dex).padStart(3, '0')}</span>`);
-      const cn = G.DB.copies(s, p.dex, false) + G.DB.copies(s, p.dex, true);
-      if (cn > 1 + (sh ? 1 : 0)) cell.insertAdjacentHTML('beforeend', `<span class="dup-n" title="Copias repetidas">×${G.DB.copies(s, p.dex, false)}${sh && G.DB.copies(s, p.dex, true) > 1 ? ' · ★×' + G.DB.copies(s, p.dex, true) : ''}</span>`);
+      const nN = G.DB.copies(s, p.dex, false), nS = G.DB.copies(s, p.dex, true);
+      if (nN > 1 || nS > 1) {
+        cell.insertAdjacentHTML('beforeend', `<div class="dups-tags">
+          ${nN > 1 ? `<span class="dup-n" title="Copias normales">×${nN}</span>` : ''}
+          ${nS > 1 ? `<span class="dup-n sh" title="Copias shiny">${G.Icons.html('shiny', 10)}×${nS}</span>` : ''}</div>`);
+      }
       if (p.dex === s.partner) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Compañero">${G.Icons.html('crown', 14)}</span>`);
       else if (sh) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Tienes su shiny">${G.Icons.html('shiny', 12)}</span>`);
       const useShiny = sh && p.dex === s.partner && s.partnerShiny;
