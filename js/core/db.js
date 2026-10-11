@@ -327,7 +327,13 @@ G.DB = (() => {
     save = migrate(s, s.name);
     key = uid; user = save.name; guest = false;
     write(K_CLOUD + uid, save);
-    if (online) await pushNow(); else { pending = true; setSync('offline'); scheduleRetry(); }
+    // Sólo se sube si hay algo que la nube no tenga (cuenta nueva, progreso de
+    // este ordenador sin subir...), y SIN esperar: antes el menú no salía hasta
+    // terminar la subida, y con Firebase lento se tardaba hasta 9 s en entrar.
+    const same = remote && JSON.stringify(plain(migrate(remote))) === JSON.stringify(plain(save));
+    if (!online) { pending = true; setSync('offline'); scheduleRetry(); }
+    else if (same) setSync('ok');
+    else pushNow();
   }
 
   /*
@@ -340,7 +346,8 @@ G.DB = (() => {
   /** Sube la partida fusionándola con lo que haya en la nube (transacción). */
   function pushNow() {
     if (mode !== 'cloud' || guest || !save || !uid) return Promise.resolve();
-    if (pushing) { pending = true; return pushing; }
+    // Si ya hay una subida en marcha, se hace otra justo después (para lo que haya cambiado mientras).
+    if (pushing) { pending = true; return pushing.then(() => (pending ? pushNow() : undefined)); }
     clearTimeout(pushT); pushT = 0; pushDue = 0;
     if (navigator.onLine === false) {
       pending = true; setSync('offline'); scheduleRetry();
@@ -359,18 +366,23 @@ G.DB = (() => {
     });
     // Si la red se cae a medias, Firestore puede quedarse esperando: tope de 12 s.
     const timeout = new Promise((_, rej) => setTimeout(() => rej({ code: 'unavailable' }), 12000));
+    let failed = false;
     pushing = Promise.race([tr, timeout]).then(() => {
-      if (merged && save) { applyInPlace(merged); write(K_CLOUD + uid, save); }
+      fails = 0;
+      // Se FUSIONA con lo de ahora (no se sobrescribe): si has cambiado algo
+      // mientras se subía (elegir compañero, una compra...), no se pierde.
+      if (merged && save) { applyInPlace(merge(plain(save), merged)); write(K_CLOUD + uid, save); }
       setSync(pending ? 'pending' : 'ok');
       if (G.UI && G.UI.refreshCoins) G.UI.refreshCoins();
     }).catch(e => {
       console.warn('[DB] no se pudo sincronizar:', e.code || e.message);
-      pending = true;
+      pending = true; failed = true;
       setSync(navigator.onLine === false || e.code === 'unavailable' ? 'offline' : 'pending');
       scheduleRetry();
     }).finally(() => {
       pushing = null;
-      if (pending && syncState === 'pending') schedulePush(Math.max(1500, PUSH_GAP - (Date.now() - lastPush)));
+      // (Si ha fallado, el reintento ya está programado con su espera creciente.)
+      if (!failed && pending && syncState === 'pending') schedulePush(Math.max(1500, PUSH_GAP - (Date.now() - lastPush)));
     });
     return pushing;
   }
@@ -383,7 +395,18 @@ G.DB = (() => {
     clearTimeout(pushT); pushDue = due;
     pushT = setTimeout(() => { pushT = 0; pushDue = 0; pushNow(); }, ms);
   }
-  function scheduleRetry() { clearTimeout(retryT); retryT = setTimeout(() => { if (pending) pushNow(); }, 15000); }
+  /**
+   * Reintento con espera creciente: 15 s, 30 s, 1 min, 2 min... hasta 10 min.
+   * Con muchos jugadores, reintentar siempre a los 15 s cuando Firebase falla
+   * (cupo agotado, caída) multiplicaba las lecturas (pasó el 10-10-2026).
+   */
+  let fails = 0;
+  function scheduleRetry() {
+    const ms = Math.min(10 * 60e3, 15e3 * Math.pow(2, fails)) * (0.8 + Math.random() * 0.4);
+    fails = Math.min(fails + 1, 8);
+    clearTimeout(retryT);
+    retryT = setTimeout(() => { if (pending) pushNow(); }, ms);
+  }
 
   function authError(e) {
     const c = (e && e.code) || '';
