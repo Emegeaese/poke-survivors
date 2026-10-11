@@ -310,6 +310,8 @@ G.Player = class Player {
     this.hp = Math.max(1, this.maxHp * frac);
     this.invuln = 2;
     this.reviveT = 0;
+    this.frozen = false; this.slowT = 0; this.svx = this.svy = 0;
+    this.anim.hold = false;
     this.anim._start('Idle', false);
     G.FX.ring(this.x, this.y, 6, 70, '#5fe08a', 0.5, 4);
     G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#9dffb8', 18, 150);

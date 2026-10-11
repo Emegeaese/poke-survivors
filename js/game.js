@@ -126,7 +126,7 @@ G.Game = (() => {
     G.Audio.music(G.BIOME_MUSIC[0]);
     // Para el ranking: el servidor apunta cuándo empezó la partida.
     if (!coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's');
-    deathT = 0;
+    deathT = 0; itemWait = null;
     G.Guard.start(!!coop);
 
     state = 'playing';
@@ -180,7 +180,12 @@ G.Game = (() => {
       }, true);
     },
     waiting(names) { G.RunUI.setWaiting(names); },
-    resume() { G.RunUI.closeLevelUp(); if (state === 'levelup') state = 'playing'; },
+    inLevelUp() { return state === 'levelup'; },
+    resume() {
+      G.RunUI.closeLevelUp();
+      if (state === 'levelup') state = 'playing';
+      if (itemWait && state === 'playing') { const id = itemWait; itemWait = null; offerItem(id); }
+    },
     shiny(dex) { G.onShinyCaught({ dex, name: (G.DEX_BY[dex] || {}).name || '' }); },
     over(d) {
       if (d) Object.assign(pl, { kills: d.ki, bosses: d.bo, coins: d.co, level: Math.max(pl.level, d.lv || 1), t1: d.t1 || pl.t1, t10: d.t10 || pl.t10 });
@@ -299,8 +304,11 @@ G.Game = (() => {
   const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend' };
 
   /** Has cogido un objeto: si no llevas ninguno te lo pones; si no, eliges. */
+  let itemWait = null;      // objeto cogido mientras salían las cartas de nivel
   function offerItem(id) {
     if (!pl || !G.Items.BY[id]) return;
+    // La ventana de objeto taparía las cartas de nivel (se quedaría todo esperando): se deja para después.
+    if (state === 'levelup') { itemWait = id; return; }
     const take = got => {
       if (got !== pl.item) {
         pl.equip(got);

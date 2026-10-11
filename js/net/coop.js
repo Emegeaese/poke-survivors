@@ -31,6 +31,13 @@ G.Coop = (() => {
   let waiting = new Set();              // subida de nivel: quién falta por elegir
   let members = [];
   let spec = null;                      // uid al que miras mientras estás caído (null = nadie)
+  // Subida de nivel compartida. El anfitrión numera cada una (lvSerial) y en CADA
+  // fotograma dice a cada invitado en qué punto está (lk: 0 ninguna, 1 te toca
+  // elegir, 2 esperan a otros). Así, aunque se pierda o llegue desordenado un
+  // aviso suelto, el invitado se corrige solo y nadie se queda congelado.
+  let lvSerial = 0, lvStart = 0;        // anfitrión
+  let seenLs = 0, pickedLs = 0, rePick = 0;   // invitado
+  const LEVEL_TIMEOUT = 60000;          // si alguien no elige en un minuto, se sigue sin él
 
   // ---------------- escalado de dificultad ----------------
 
@@ -53,6 +60,7 @@ G.Coop = (() => {
     members = cfg.members;
     mates.clear();
     outEv = []; flushT = 0; waiting = new Set(); spec = null;
+    lvSerial = 0; lvStart = 0; seenLs = 0; pickedLs = 0; rePick = 0;
     cfg.members.forEach((m, i) => {
       const x = (i - (cfg.members.length - 1) / 2) * 34, y = 0;
       if (m.uid === me) { pl.x = x; pl.y = y; pl.uid = me; pl.coopHost = host; pl.tagColor = COLORS[i]; return; }
@@ -169,7 +177,8 @@ G.Coop = (() => {
     }
     const ev = m.q; m.q = [];
     return { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
-             p, e: enemyList(focusOf(m)), ev };
+             p, e: enemyList(focusOf(m)), ev,
+             ls: lvSerial, lk: !waiting.size ? 0 : waiting.has(m.uid) ? 1 : 2 };
   }
 
   function flushAll() { for (const m of mates.values()) if (m.connected) G.Net.send(m.uid, hostFrame(m)); }
@@ -183,6 +192,10 @@ G.Coop = (() => {
   /** Cada fotograma (también en la pantalla de subida de nivel). */
   function tick(dt) {
     if (!active) return;
+    // Anfitrión: si alguien no elige en un minuto, se sigue sin él (no se queda todo parado).
+    if (host && waiting.size && performance.now() - lvStart > LEVEL_TIMEOUT) {
+      for (const u of [...waiting]) picked(u);
+    }
     if (host) {
       for (const m of mates.values()) {
         if (!m.connected) continue;
@@ -203,12 +216,13 @@ G.Coop = (() => {
 
   // ---------------- recepción ----------------
 
-  G.Net.on((from, msg) => {
+  function onNet(from, msg) {
     if (!msg) return;
     if (msg.k === 'start') { if (G.Flow.startCoop) G.Flow.startCoop(msg); return; }
     if (!active || msg.k !== 'f') return;
     if (host) onClientFrame(from, msg); else if (from === hostUid) onHostFrame(msg);
-  });
+  }
+  G.Net.on(onNet);
 
   G.Net.onPeer((u, mode) => {
     if (!active || mode !== 'closed') return;
@@ -270,6 +284,7 @@ G.Coop = (() => {
 
   function onHostFrame(msg) {
     for (const ev of msg.ev || []) applyHostEvent(ev);
+    syncLevelUp(msg);
     api.syncTeam({ time: msg.t, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
                    t1: (msg.tk || [])[0], t10: (msg.tk || [])[1] });
     for (const u in msg.p || {}) {
@@ -289,6 +304,25 @@ G.Coop = (() => {
       n.x = a[1]; n.y = a[2]; n.age = 0; n.last = now;
       e.hp = Math.min(e.maxHp, a[3]);
       n.anim = a[4]; n.dir = a[5]; n.st = a[6];
+    }
+  }
+
+  /** Invitado: cuadra tu pantalla de subida de nivel con lo que dice el anfitrión. */
+  function syncLevelUp(msg) {
+    if (msg.ls == null) return;
+    const now = performance.now();
+    if (msg.lk === 1) {
+      if (pickedLs === msg.ls) {
+        // Ya elegiste pero él no lo sabe (se perdió tu aviso): se repite.
+        if (now - rePick > 1500) { rePick = now; outEv.push(['lp']); flushClient(true); }
+      } else if (!api.inLevelUp()) {
+        // Te tocaba elegir y no te llegó el aviso: se abren las cartas ahora.
+        seenLs = msg.ls;
+        api.levelStart(msg.lv);
+      }
+    } else if (msg.lk === 0 && api.inLevelUp() && msg.ls >= seenLs) {
+      // La subida de nivel ya terminó y te quedaste en ella: se cierra.
+      api.resume();
     }
   }
 
@@ -317,7 +351,11 @@ G.Coop = (() => {
       case 'pb': G.World.breakAt(ev[1], ev[2]); break;
       case 'say': G.Spawner.say(ev[1], ev[2]); break;
       case 'heal': if (!local.dead) { local.heal(local.maxHp * ev[1]); G.FX.ring(local.x, local.y, 6, 60, '#5fe08a', 0.4, 3); } break;
-      case 'lu': api.levelStart(ev[1]); break;
+      case 'lu':
+        if (ev[2] && ev[2] <= seenLs) break;      // repetido o viejo
+        seenLs = ev[2] || seenLs;
+        api.levelStart(ev[1]);
+        break;
       case 'lw': api.waiting(ev[1]); break;
       case 'lr': api.resume(); break;
       case 'sh': api.shiny(ev[1]); break;
@@ -377,7 +415,8 @@ G.Coop = (() => {
   function levelStart(level) {
     waiting = new Set([me]);
     for (const m of mates.values()) if (m.connected) waiting.add(m.uid);
-    emit(['lu', level]);
+    lvSerial++; lvStart = performance.now();
+    emit(['lu', level, lvSerial]);
     flushAll();
     api.levelStart(level);
     sendWaiting();
@@ -403,7 +442,7 @@ G.Coop = (() => {
   /** Has elegido tu carta. */
   function localPicked() {
     if (host) picked(me);
-    else { outEv.push(['lp']); flushClient(true); }
+    else { pickedLs = seenLs; rePick = performance.now(); outEv.push(['lp']); flushClient(true); }
   }
 
   /** Anfitrión: se acabó para todos. */
@@ -426,6 +465,7 @@ G.Coop = (() => {
     get active() { return active; },
     get isHost() { return active && host; },
     get local() { return local; },
+    onNet,                              // (para pruebas) entrega un mensaje como si llegara por la red
     /** Espectador: a quién miras (uid) y su nombre. */
     get spec() { return spec; },
     setSpec(u) { spec = u || null; },
