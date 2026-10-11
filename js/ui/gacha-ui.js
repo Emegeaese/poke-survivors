@@ -61,7 +61,7 @@ G.GachaUI = (() => {
       `<div><span>${G.Icons.html('shiny', 12)} Shiny</span><span>1%</span></div>
        <p class="note">· La tirada ×10 garantiza al menos una Épica.<br>
        · A las ${G.Gacha.PITY_5} tiradas sin Legendaria en un banner, la siguiente lo es.<br>
-       · Los repetidos dan Pokémonedas (los shiny repetidos, el triple).<br>
+       · Los repetidos se guardan como copias: véndelos por Pokémonedas (los shiny, el triple) o intercámbialos con amigos.<br>
        · Los tickets se consiguen jugando: algunos Pokémon los sueltan al caer, y
          los jefes y los legendarios de las grietas dan tickets ×10.</p>`;
 
@@ -80,7 +80,9 @@ G.GachaUI = (() => {
 
   async function pull(n, use = 't1') {
     if (busy) return;
-    const res = G.Gacha.pull(G.DB.save, n, gen, use);
+    let res;
+    try { res = G.Gacha.pull(G.DB.save, n, gen, use); }
+    catch (e) { console.error('[Gacha]', e); G.Audio.sfx('error'); G.UI.toast('Error en la tirada: no se ha gastado nada'); return; }
     if (!res) { G.Audio.sfx('error'); G.UI.toast('No tienes tickets suficientes: consíguelos jugando'); return; }
     G.Progress.checkAch();
     G.DB.commit(true);

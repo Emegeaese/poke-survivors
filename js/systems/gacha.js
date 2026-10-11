@@ -80,6 +80,13 @@ G.Gacha = (() => {
   function pull(save, n, gen = 1, use = 't1') {
     const cost = costOf(save, n, use);
     if (!cost) return null;
+    // Si algo falla a medias, no se gasta nada (ni tickets ni pity).
+    const backup = JSON.stringify({ tickets: save.tickets, pity: save.pity, shiny: save.shiny, owned: save.owned, stats: save.stats });
+    try { return doPull(save, n, gen, cost); }
+    catch (e) { Object.assign(save, JSON.parse(backup)); throw e; }
+  }
+
+  function doPull(save, n, gen, cost) {
     save.tickets.t1 -= cost.t1;
     save.tickets.t10 -= cost.t10;
     save.pity = save.pity || {};
@@ -102,8 +109,8 @@ G.Gacha = (() => {
       // Un repetido ya no se convierte en monedas: queda como otra copia, que
       // puedes vender (Pokémon > ficha) o conservar para intercambiarla.
       const isNew = !G.DB.copies(save, mon.dex, shiny);
-      const n = G.DB.addCopy(save, mon.dex, shiny, 'gacha');
-      out.push({ dex: mon.dex, rarity, shiny, isNew, copies: n, value: sellValue(rarity, shiny) });
+      const have = G.DB.addCopy(save, mon.dex, shiny, 'gacha');
+      out.push({ dex: mon.dex, rarity, shiny, isNew, copies: have, value: sellValue(rarity, shiny) });
     }
     save.stats.pulls = (save.stats.pulls || 0) + n;
     return out;

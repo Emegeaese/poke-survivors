@@ -748,8 +748,8 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 /* Etiquetas de copias: pastillas a la derecha del sprite (normal en dorado, shiny en celeste). */
 .cell { position: relative; }
 .cell .dups-tags { position: absolute; right: 4px; top: 24px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; pointer-events: none; }
-.dup-n { display: inline-flex; align-items: center; gap: 2px; background: var(--gold); color: #1a1200; font-weight: 700; font-size: 13px;
-  line-height: 1; padding: 3px 6px 2px; border-radius: 9px; border: 2px solid #1a1200; box-shadow: 0 1px 0 rgba(0,0,0,.4); }
+.dup-n { display: inline-flex; align-items: center; gap: 3px; background: var(--gold); color: #1a1200; font-weight: 400; font-size: 13px;
+  line-height: 1; padding: 3px 6px; border-radius: 4px; text-shadow: none; box-shadow: none; border: 0; }
 .dup-n.sh { background: #9ae6ff; }
 /* ---------- intercambio ---------- */
 #scr-trade { z-index: 55; }
