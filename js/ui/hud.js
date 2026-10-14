@@ -229,6 +229,9 @@ G.HUD = (() => {
       const a = Math.min(1, ban.t * 1.6);
       ctx.save();
       ctx.globalAlpha = a;
+      // Siempre centrado (antes heredaba la alineación de lo último dibujado, p.
+      // ej. la flecha de un duende del tesoro, y salía descolocado).
+      ctx.textAlign = 'center';
       ctx.font = F(800, 22);
       ctx.fillStyle = '#ffcb3d';
       ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = 4;
@@ -242,7 +245,17 @@ G.HUD = (() => {
     const n = Math.max(1, pl.slots.length);
     const totalW = n * S + (n - 1) * GAP;
     let sx = (w - totalW) / 2;
-    const sy = h - S - 18;
+    // Por encima de la barra de inicio del iPhone (allí los toques a veces no llegan).
+    let sy = h - S - 18 - (touch ? Math.min(28, G.Touch.safeArea().bottom) : 0);
+    // En móvil, donde la haya puesto el jugador: el bloque objeto + todos los
+    // huecos (aunque aún no estén llenos), por su centro, como en el editor
+    // (layout-ui.js); los ataques nuevos van saliendo hacia la derecha.
+    const pb = touch && G.Touch.spot('bar');
+    if (pb) {
+      const nAll = Math.max(n, pl.maxMoves), bw = S + 18 + nAll * S + (nAll - 1) * GAP;
+      sx = G.U.clamp(pb[0] * w - bw / 2, 6, Math.max(6, w - bw - 6)) + S + 18;
+      sy = G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6);
+    }
     const BOND = '#ff8ad8';
     const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul), 0, 1);
 
@@ -254,7 +267,7 @@ G.HUD = (() => {
       const x = sx + i * (S + GAP);
       const y = on ? sy - 6 : sy;
       // Tocar (o hacer clic en) un icono activa ese movimiento.
-      if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing' && pl.active !== i) { pl.setActive(i); G.Audio.sfx('click'); } }, GAP / 2);
+      if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing' && pl.active !== i) { pl.setActive(i); G.Audio.sfx('click'); } }, GAP / 2 + 3);
       const col = m ? G.U.TYPE_COLOR[m.type] : '#4a5468';
 
       // fondo
@@ -352,7 +365,10 @@ G.HUD = (() => {
 
     // ---------- botón de pausa (táctil) ----------
     if (touch) {
-      const bx = w - 52, by = 12, bs = 40;
+      const sa = G.Touch.safeArea();
+      const pp = G.Touch.spot('pause');
+      const bx = pp ? G.U.clamp(pp[0] * w - 20, 4, w - 44) : w - 52 - Math.min(44, sa.right);
+      const by = pp ? G.U.clamp(pp[1] * h - 20, 10, h - 44) : 12 + Math.min(20, sa.top), bs = 40;
       roundRect(ctx, bx, by, bs, bs, 10);
       ctx.fillStyle = 'rgba(10,16,28,.7)'; ctx.fill();
       ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(244,248,255,.8)'; ctx.stroke();

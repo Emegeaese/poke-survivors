@@ -199,6 +199,8 @@ G.Net = (() => {
     onPeer(fn) { peerHandlers.add(fn); },
     mode(u) { const p = peers.get(u); return p ? p.mode : 'closed'; },
     /** ¿Va por el relé? Entonces se manda menos a menudo. */
+    /** (Sin servidor TURN en esta versión: nunca va por TURN.) */
+    viaTurn(u) { return false; },
     slow(u) { const p = peers.get(u); return !p || p.mode !== 'direct'; },
     peers() { return [...peers.keys()]; },
     get open_() { return !!roomId; },

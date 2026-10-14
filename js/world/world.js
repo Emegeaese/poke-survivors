@@ -61,10 +61,14 @@ G.World = (() => {
   /** Terreno "puro" de un tile (sin caché). */
   function arenaDist(tx, ty) { return arena ? Math.hypot(tx - arena.tx, ty - arena.ty) : Infinity; }
 
-  /** Pasillo libre de la arena: donde aparecéis (sur) y el legendario (norte). */
+  /**
+   * Pasillo libre de la arena: donde aparecéis (sur) y el legendario (norte).
+   * Con `clear` en el tema, además un claro donde aterriza Arceus (5 al norte).
+   */
   function arenaSafe(tx, ty) {
     const lx = tx - arena.tx, ly = ty - arena.ty;
-    return (Math.abs(lx) <= 2 && ly >= -6 && ly <= 5) || Math.hypot(lx, ly) < 2.5;
+    return (Math.abs(lx) <= 2 && ly >= -6 && ly <= 5) || Math.hypot(lx, ly) < 2.5 ||
+           (arena.th.clear > 0 && Math.hypot(lx, ly + 5) < arena.th.clear);
   }
 
   function terrainRaw(tx, ty) {
@@ -554,12 +558,15 @@ G.World = (() => {
   }
 
   /**
-   * @param i        bioma (se repiten los normales en ciclo; G.Tiles.ARENA es la grieta)
+   * @param i        bioma (G.Tiles.ARENA y siguientes son las arenas de la grieta)
    * @param instant  sin fundido (al empezar una run)
+   * Una run cambia de bioma cada 4 min y recorre toda la lista; al acabarse,
+   * vuelve a empezar. (Antes, pasado el último, hacia el minuto 84, se pedía
+   * un bioma que no existe: pantalla negra, el juego roto y niveles sin fin.)
    */
   function setBiome(i, instant = false) {
-    const n = G.Tiles.NORMAL;
-    const b = i >= G.Tiles.ARENA ? i : ((i % n) + n) % n;
+    const n = G.Tiles.BIOMES.length;
+    const b = ((i % n) + n) % n;
     if (b === biome) return;
     // El terreno es el mismo: sólo cambia la paleta, fundiéndose poco a poco.
     fade = instant ? null : { from: biome, images, t: 0 };

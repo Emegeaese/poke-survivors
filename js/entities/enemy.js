@@ -116,6 +116,7 @@
         amount = d - a;
       }
       this.hp -= Math.max(1, Math.round(amount));
+      G.Judgment.noteDmg(amount, this);
       this.showHurt(d, color, dirX, dirY, eff);
       if (knock > 0 && !this.boss) {
         const [nx, ny] = G.U.norm(dirX, dirY);
@@ -129,9 +130,9 @@
     /** Lo que se VE al recibir un golpe. */
     showHurt(d, color, dirX = 0, dirY = 0, eff = null) {
       this.flash = 0.09;
-      // Muy eficaz: número amarillo y grande. Poco eficaz: gris.
-      G.FX.dmgText(this.x, this.y - this.bodyH - 4, d, eff === 'super' ? '#ffe14d' : eff === 'weak' ? '#a3abb8' : color,
-                   this.boss || eff === 'super');
+      // Muy eficaz: número amarillo y grande. Poco eficaz: gris. Crítico: naranja y grande.
+      G.FX.dmgText(this.x, this.y - this.bodyH - 4, d, eff === 'crit' ? '#ff9a3c' : eff === 'super' ? '#ffe14d' : eff === 'weak' ? '#a3abb8' : color,
+                   this.boss || eff === 'super' || eff === 'crit');
       G.FX.spark(this.x, this.y - this.bodyH * 0.5, color, dirX, dirY, 3);
       if (!this.anim.busy() && this.phase !== 'dash') this.anim.play('Hurt');
       G.Audio.sfx('hit');
@@ -167,13 +168,14 @@
         if (this.shiny) { G.FX.burst(this.x, cy, '#ffe9a0', 30, 220); G.FX.ring(this.x, this.y, this.r, this.r * 7, '#9ae6ff', 0.7, 5); }
         return;
       }
-      if (this.boss) {
+      // (Los legendarios de la Sentencia de Arceus sólo dan experiencia.)
+      if (this.boss && !this.judge) {
         G.Camera.kick(0.9);
         for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-40, 40), this.y + G.U.rand(-30, 30), 5);
         // Los jefes siempre sueltan un objeto equipable.
         G.Pickups.drop('item', this.x - 26, this.y - 10, G.Items.roll());
       }
-      G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend);
+      G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge);
       if (this.golden && Math.random() < 0.35) G.Pickups.drop('coin', this.x + 6, this.y - 4, 3);
       // Duende del tesoro: Meowth suelta monedas; Gholdengo, un ticket ×10.
       if (this.behavior === 'thief') {
@@ -183,8 +185,8 @@
         G.FX.ring(this.x, this.y, this.r, this.r * 5, '#ffd23f', 0.6, 4);
       }
       if (this.legend) {
-        // El legendario de la grieta: además del ticket ×10 de todo jefe.
-        G.Pickups.drop('ticket10', this.x + 20, this.y - 16, 1);
+        // El legendario de la grieta: tickets sueltos y monedas (el ×10, como
+        // la mitad de las veces; antes daba 2 siempre).
         for (let i = 0; i < 3; i++) G.Pickups.drop('ticket', this.x + G.U.rand(-30, 30), this.y + G.U.rand(-20, 20), 1);
         for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-50, 50), this.y + G.U.rand(-35, 35), 8);
       }
@@ -213,7 +215,8 @@
       }
       const n = this.net;
       if (!n) return;
-      const lead = Math.min(0.25, n.age);
+      // Se adelanta hasta 0,3 s (por TURN llegan 4 posiciones por segundo).
+      const lead = Math.min(0.3, n.age);
       n.age += dt;
       const tx = n.x + n.vx * lead, ty = n.y + n.vy * lead;
       const ox = this.x, oy = this.y;
@@ -263,8 +266,8 @@
 
       // --- terreno ---
       let terrainMul = 1;
-      // (El legendario está en su casa: su arena no le afecta.)
-      if (!this.flying && !this.legend && G.World.isLiquid(this.x, this.y)) {
+      // (El legendario está en su casa: su arena no le afecta. Los de Arceus, tampoco.)
+      if (!this.flying && !this.legend && !this.judge && G.World.isLiquid(this.x, this.y)) {
         const le = G.World.liquidEffect(this.types);
         if (le.dmg) {
           this.lavaTick -= dt;
@@ -453,7 +456,7 @@
     enrage() {
       this.ai.fury = true;
       this.spd *= 1.15;
-      G.Spawner.say('¡' + this.name + ' se ha enfurecido!', 2.4);
+      if (!this.judge) G.Spawner.say('¡' + this.name + ' se ha enfurecido!', 2.4);
       G.FX.ring(this.x, this.y, this.r, this.r * 5, '#ff4a4a', 0.6, 5);
       G.Camera.kick(0.5);
       G.Audio.sfx('boss');
@@ -586,11 +589,16 @@
     }
 
     healAround() {
+      // 7 % de la vida (era 15 %: con varios curanderos curaban más de lo que
+      // pegabas), y más cuanto más fuerte pegas, pero cada vez menos: con el
+      // doble de ataque cura un 27 % más, con 10 veces más un 124 %, y como
+      // mucho ×2,5. (Como los enemigos que tienen más vida si haces más daño.)
+      const pow = Math.max(1, ...G.Game.everyone().map(p => (p.atk > 0 && p.baseAtk > 0 ? p.atk / p.baseAtk : 1)));
+      const k = 0.07 * Math.min(2.5, Math.pow(pow, 0.35));
       let n = 0;
       for (const e of G.EnemyMgr.queryCircle(this.x, this.y, 150)) {
         if (e.dead || e.hp >= e.maxHp) continue;
-        // 7 % (era 15 %: con varios curanderos curaban más de lo que pegabas).
-        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.07);
+        e.hp = Math.min(e.maxHp, e.hp + e.maxHp * k);
         G.FX.burst(e.x, e.y - e.bodyH * 0.6, '#7dffb0', 5, 60);
         n++;
       }
@@ -899,7 +907,7 @@
         if (e.remote) continue;
         if (e.dead) {
           pl.kills++;
-          if (e.boss) pl.bosses++;
+          if (e.boss && !e.judge) pl.bosses++;
           G.Progress.kill(e);
           corpses.push(e);
           list.splice(i, 1);

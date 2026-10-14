@@ -9,16 +9,26 @@
  * Los invitados ven COPIAS de los enemigos del anfitrión (enemy.remote) y los
  * ataques de los compañeros como "fantasmas" que no hacen daño (ver combat.js).
  *
+ * Quién está eligiendo (objeto o vínculo) y quién ha elegido carta de nivel va
+ * además en CADA envío (no sólo en un aviso suelto): si un aviso se pierde
+ * porque la conexión parpadea, el siguiente envío lo arregla y nadie se queda
+ * esperando a otro para siempre (pasaba en 2026-10).
+ *
  * Mensajes (por net.js, unas 15 veces por segundo; 5 si va por el relé):
  *   invitado -> anfitrión  { k:'f', p:[estado], ev:[eventos] }
  *   anfitrión -> invitado  { k:'f', t, lv, xp, xn, ki, bo, co, p:{uid:[estado]},
- *                            e:[[id,x,y,vida,anim,dir,estados]], ev:[eventos] }
+ *                            e:[[id,x,y,vida,anim,dir,estados]], ev:[eventos],
+ *                            ja:[x,y,anim,dir] (Arceus, sólo en la Sentencia) }
  *   anfitrión -> todos     { k:'start', seed, host, members:[{uid,name,dex,shiny}] }
  */
 G.Coop = (() => {
   const ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint'];
   const COLORS = ['#ffcb3d', '#5fc8ff', '#7ee07a', '#ff8ad8'];
-  const RATE_FAST = 1 / 15, RATE_SLOW = 1 / 5;
+  // Mensajes por segundo: 15 directo, 4 por el TURN de Cloudflare (se paga por
+  // GB: era 7 y se iban unos 110 GB al día, el 12-10-2026) y 3 por el relé de
+  // la Realtime Database (1 $ el GB: sólo si todo lo demás falla).
+  const RATE_FAST = 1 / 15, RATE_TURN = 1 / 4, RATE_SLOW = 1 / 3;
+  const rateFor = u => (G.Net.slow(u) ? RATE_SLOW : G.Net.viaTurn(u) ? RATE_TURN : RATE_FAST);
   const NEAR = 950;                     // radio de enemigos que se mandan a cada uno
 
   let active = false, host = false, me = null, hostUid = null;
@@ -29,15 +39,24 @@ G.Coop = (() => {
   let hitFrom = null;                   // invitado cuyo golpe se está aplicando (no repetirle el número)
   let api = {};                         // callbacks del juego (game.js)
   let waiting = new Set();              // subida de nivel: quién falta por elegir
+  let holds = new Set();                // quién está eligiendo una fusión (la partida se para para todos)
+  // El anfitrión mueve a los enemigos: si cambia de pestaña (o se le congela),
+  // todo se para para todos. Antes los enemigos se quedaban quietos y los demás
+  // seguían jugando con una ventaja enorme.
+  let hostAway = false, stalled = false, lastHostAt = 0;
+  // Cartas de nivel: número de la ronda (anfitrión), la última que te ha llegado
+  // y la última que has elegido (invitado). Y el último "quién elige" aplicado.
+  let levelSeq = 0, levelNow = 1, seenSeq = 0, doneSeq = 0, lastHo = '';
+  const STALL_MS = 2500;
   let members = [];
   let spec = null;                      // uid al que miras mientras estás caído (null = nadie)
-  // Subida de nivel compartida. El anfitrión numera cada una (lvSerial) y en CADA
-  // fotograma dice a cada invitado en qué punto está (lk: 0 ninguna, 1 te toca
-  // elegir, 2 esperan a otros). Así, aunque se pierda o llegue desordenado un
-  // aviso suelto, el invitado se corrige solo y nadie se queda congelado.
-  let lvSerial = 0, lvStart = 0;        // anfitrión
-  let seenLs = 0, pickedLs = 0, rePick = 0;   // invitado
+  let lvStart = 0;                      // anfitrión: cuándo empezaron las cartas de nivel
   const LEVEL_TIMEOUT = 60000;          // si alguien no elige en un minuto, se sigue sin él
+  // Un compañero que lleva mucho sin mandar nada (pestaña dormida, red caída) deja de contar: no se
+  // le dibuja "vivo y quieto", no impide que acabe la partida ni se espera su carta de nivel.
+  // Si vuelve a mandar datos, vuelve solo.
+  const AWAY_MS = 15000;
+  const here = m => m.connected && (performance.now() - (m.last || 0) < AWAY_MS);
 
   // ---------------- escalado de dificultad ----------------
 
@@ -59,8 +78,9 @@ G.Coop = (() => {
     api = cb;
     members = cfg.members;
     mates.clear();
-    outEv = []; flushT = 0; waiting = new Set(); spec = null;
-    lvSerial = 0; lvStart = 0; seenLs = 0; pickedLs = 0; rePick = 0;
+    outEv = []; flushT = 0; waiting = new Set(); holds = new Set(); spec = null;
+    hostAway = false; stalled = false; lastHostAt = performance.now();
+    levelSeq = 0; levelNow = 1; seenSeq = 0; doneSeq = 0; lastHo = '';
     cfg.members.forEach((m, i) => {
       const x = (i - (cfg.members.length - 1) / 2) * 34, y = 0;
       if (m.uid === me) { pl.x = x; pl.y = y; pl.uid = me; pl.coopHost = host; pl.tagColor = COLORS[i]; return; }
@@ -76,7 +96,7 @@ G.Coop = (() => {
 
   function end() {
     active = false; host = false; local = null;
-    mates.clear(); outEv = []; waiting = new Set(); spec = null;
+    mates.clear(); outEv = []; waiting = new Set(); holds = new Set(); spec = null;
   }
 
   /** Te vas de la partida (los demás siguen). */
@@ -94,12 +114,6 @@ G.Coop = (() => {
   }
 
   // ---------------- lista de jugadores ----------------
-
-  // Un compañero que lleva mucho sin mandar nada (pestaña dormida, red caída) deja de contar: no se
-  // le dibuja "vivo y quieto", no impide que acabe la partida ni se espera su carta de nivel.
-  // Si vuelve a mandar datos, vuelve solo.
-  const AWAY_MS = 15000;
-  const here = m => m.connected && (performance.now() - (m.last || 0) < AWAY_MS);
 
   function players() {
     const out = [local];
@@ -129,12 +143,12 @@ G.Coop = (() => {
     const m = g.find(x => x.kind === 'orbit') || g[0];
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
-            r2(local.reviveT || 0)];
+            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq];
   }
 
   function readState(a) {
     return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mv: a[7], ml: a[8],
-             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12] };
+             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14] };
   }
 
   // ---------------- envío ----------------
@@ -184,9 +198,14 @@ G.Coop = (() => {
       if (here(o) && o.uid !== m.uid && o.state) p[o.uid] = o.state;
     }
     const ev = m.q; m.q = [];
-    return { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
-             p, e: enemyList(focusOf(m)), ev,
-             ls: lvSerial, lk: !waiting.size ? 0 : waiting.has(m.uid) ? 1 : 2 };
+    const f = { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
+                p, e: enemyList(focusOf(m)), ev };
+    const ja = G.Judgment.netState();       // Arceus en la Sentencia
+    if (ja) f.ja = ja;
+    // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
+    f.ho = holdNames();
+    if (waiting.size) f.lu = [levelSeq, levelNow];
+    return f;
   }
 
   function flushAll() { for (const m of mates.values()) if (m.connected) G.Net.send(m.uid, hostFrame(m)); }
@@ -209,13 +228,14 @@ G.Coop = (() => {
         if (!m.connected) continue;
         m.flushT -= dt;
         if (m.flushT > 0) continue;
-        m.flushT = G.Net.slow(m.uid) ? RATE_SLOW : RATE_FAST;
+        m.flushT = rateFor(m.uid);
         G.Net.send(m.uid, hostFrame(m));
       }
     } else {
+      if (!stalled && performance.now() - lastHostAt > STALL_MS) { stalled = true; updateAway(); }
       flushT -= dt;
       if (flushT <= 0) {
-        flushT = G.Net.slow(hostUid) ? RATE_SLOW : RATE_FAST;
+        flushT = rateFor(hostUid);
         G.Net.toHost({ k: 'f', p: myState(), ev: outEv, sp: spec || 0 });
         outEv = [];
       }
@@ -233,7 +253,7 @@ G.Coop = (() => {
   G.Net.on(onNet);
 
   G.Net.onPeer((u, mode) => {
-    if (!active || mode !== 'closed') return;
+    if (!active || (mode !== 'closed' && mode !== 'failed')) return;
     if (host) mateGone(u);
     else if (u === hostUid) { const cb = api.lost; end(); if (cb) cb('Se ha perdido la conexión con el anfitrión.'); }
   });
@@ -245,6 +265,7 @@ G.Coop = (() => {
     G.Projectiles.clearOrbs(m.pl);
     G.Spawner.say(m.name + ' ha dejado la partida', 2.6);
     if (waiting.has(u)) picked(u);
+    if (holds.has(u)) holdOff(u);
     if (api.mateLeft) api.mateLeft(m);
   }
 
@@ -255,7 +276,7 @@ G.Coop = (() => {
     if (!m || !m.connected) return;
     m.last = performance.now();
     m.spec = msg.sp || null;
-    if (msg.p) { m.state = msg.p; m.pl.net = readState(msg.p); m.xpMul = m.pl.net.xpMul || 1; }
+    if (msg.p) { m.state = msg.p; m.pl.net = readState(msg.p); m.xpMul = m.pl.net.xpMul || 1; reconcile(from, m.pl.net); }
     for (const ev of msg.ev || []) {
       switch (ev[0]) {
         case 'h': {
@@ -283,17 +304,47 @@ G.Coop = (() => {
           emit(['pb', ev[1], ev[2]], from);
           break;
         case 'lp': picked(from); break;
+        case 'hs': holdOn(from); break;
+        case 'he': holdOff(from); break;
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
       }
     }
   }
 
+  /** Anfitrión: lo que dice cada envío del invitado manda sobre avisos que se hayan perdido. */
+  function reconcile(from, n) {
+    if (n.ch === undefined) return;                        // versión vieja del juego
+    if (n.ch && !holds.has(from)) holdOn(from);
+    else if (!n.ch && holds.has(from)) holdOff(from);
+    if (waiting.has(from) && n.ld >= levelSeq) picked(from);
+  }
+
   // --- en el invitado ---
 
+  /** Invitado: se para (o sigue) según si el anfitrión está. */
+  function updateAway() { if (api.away) api.away(hostAway || stalled ? nameOf(hostUid) : null); }
+
+  // Anfitrión: al irse de la pestaña avisa a todos al momento (después ya no
+  // podrá mandar nada) y al volver, que sigue.
+  document.addEventListener('visibilitychange', () => {
+    if (!active || !host) return;
+    emit(['ha', document.hidden ? 1 : 0]);
+    flushAll();
+  });
+
   function onHostFrame(msg) {
+    lastHostAt = performance.now();
+    if (stalled) { stalled = false; updateAway(); }
     for (const ev of msg.ev || []) applyHostEvent(ev);
-    syncLevelUp(msg);
+    if (msg.ja) G.Judgment.netApply(msg.ja);
+    // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
+    if (msg.ho) {
+      const k = msg.ho.join('|');
+      if (k !== lastHo) { lastHo = k; api.hold && api.hold(msg.ho); }
+      if (msg.lu && msg.lu[0] > seenSeq) { seenSeq = msg.lu[0]; api.levelStart(msg.lu[1]); }
+      else if (!msg.lu && api.inLevelUp && api.inLevelUp()) api.resume();
+    }
     api.syncTeam({ time: msg.t, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
                    t1: (msg.tk || [])[0], t10: (msg.tk || [])[1] });
     for (const u in msg.p || {}) {
@@ -313,25 +364,6 @@ G.Coop = (() => {
       n.x = a[1]; n.y = a[2]; n.age = 0; n.last = now;
       e.hp = Math.min(e.maxHp, a[3]);
       n.anim = a[4]; n.dir = a[5]; n.st = a[6];
-    }
-  }
-
-  /** Invitado: cuadra tu pantalla de subida de nivel con lo que dice el anfitrión. */
-  function syncLevelUp(msg) {
-    if (msg.ls == null) return;
-    const now = performance.now();
-    if (msg.lk === 1) {
-      if (pickedLs === msg.ls) {
-        // Ya elegiste pero él no lo sabe (se perdió tu aviso): se repite.
-        if (now - rePick > 1500) { rePick = now; outEv.push(['lp']); flushClient(true); }
-      } else if (!api.inLevelUp()) {
-        // Te tocaba elegir y no te llegó el aviso: se abren las cartas ahora.
-        seenLs = msg.ls;
-        api.levelStart(msg.lv);
-      }
-    } else if (msg.lk === 0 && api.inLevelUp() && msg.ls >= seenLs) {
-      // La subida de nivel ya terminó y te quedaste en ella: se cierra.
-      api.resume();
     }
   }
 
@@ -360,16 +392,15 @@ G.Coop = (() => {
       case 'pb': G.World.breakAt(ev[1], ev[2]); break;
       case 'say': G.Spawner.say(ev[1], ev[2]); break;
       case 'heal': if (!local.dead) { local.heal(local.maxHp * ev[1]); G.FX.ring(local.x, local.y, 6, 60, '#5fe08a', 0.4, 3); } break;
-      case 'lu':
-        if (ev[2] && ev[2] <= seenLs) break;      // repetido o viejo
-        seenLs = ev[2] || seenLs;
-        api.levelStart(ev[1]);
-        break;
+      case 'lu': if (!ev[2] || ev[2] > seenSeq) { seenSeq = ev[2] || seenSeq; api.levelStart(ev[1]); } break;
       case 'lw': api.waiting(ev[1]); break;
       case 'lr': api.resume(); break;
+      case 'hp': lastHo = (ev[1] || []).join('|'); api.hold && api.hold(ev[1]); break;
+      case 'ha': hostAway = !!ev[1]; updateAway(); break;
       case 'sh': api.shiny(ev[1]); break;
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
       case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
+      case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
       case 'wx': G.Weather.onEvent(ev); break;
       case 'ev': G.Events.onNet(ev); break;
       case 'hz': G.Hazards.add(ev[1], true); break;
@@ -424,8 +455,8 @@ G.Coop = (() => {
   function levelStart(level) {
     waiting = new Set([me]);
     for (const m of mates.values()) if (here(m)) waiting.add(m.uid);
-    lvSerial++; lvStart = performance.now();
-    emit(['lu', level, lvSerial]);
+    levelSeq++; levelNow = level; lvStart = performance.now();
+    emit(['lu', level, levelSeq]);
     flushAll();
     api.levelStart(level);
     sendWaiting();
@@ -448,10 +479,34 @@ G.Coop = (() => {
     api.resume();
   }
 
+  // ---------------- fusiones: pausa para todos ----------------
+  // Mientras alguien elige qué movimientos fusiona (vínculo de un legendario),
+  // la partida se para para todos, como con las cartas de nivel.
+
+  function holdNames() { return [...holds].map(nameOf); }
+
+  /** Anfitrión: `u` empieza a elegir. */
+  function holdOn(u) {
+    holds.add(u);
+    emit(['hp', holdNames()]); flushAll();
+    api.hold && api.hold(holdNames());
+  }
+
+  /** Anfitrión: `u` ha terminado (o se ha ido). */
+  function holdOff(u) {
+    if (!holds.delete(u)) return;
+    emit(['hp', holdNames()]); flushAll();
+    api.hold && api.hold(holdNames());
+  }
+
+  /** Tú empiezas / terminas de elegir fusión. */
+  function holdStart() { if (host) holdOn(me); else { outEv.push(['hs']); flushClient(true); } }
+  function holdEnd() { if (host) holdOff(me); else { outEv.push(['he']); flushClient(true); } }
+
   /** Has elegido tu carta. */
   function localPicked() {
     if (host) picked(me);
-    else { pickedLs = seenLs; rePick = performance.now(); outEv.push(['lp']); flushClient(true); }
+    else { doneSeq = seenSeq; outEv.push(['lp']); flushClient(true); }
   }
 
   /** Anfitrión: se acabó para todos. */
@@ -464,7 +519,7 @@ G.Coop = (() => {
   return {
     ANIMS, COLORS, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
-    propBroken, collected, shinyCaught, levelStart, localPicked, over,
+    propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },

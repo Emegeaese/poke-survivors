@@ -33,7 +33,7 @@ G.DB = (() => {
   const NAME_DOMAIN = 'jugadores.pokesurvivor.net';   // sólo para el email interno
 
   let mode = 'local';       // 'cloud' | 'local'
-  let localReason = '';     // por qué no hay nube: 'file' | 'config' | 'error'
+  let localReason = '';     // por qué no hay nube: 'file' | 'config' | 'host' | 'error'
   let user = null;          // nombre visible
   let key = null;           // clave local (minúsculas) o uid de Firebase
   let guest = false;
@@ -47,8 +47,20 @@ G.DB = (() => {
     catch (e) { storageOk = false; return null; }
   }
   function write(k, v) {
-    try { localStorage.setItem(k, JSON.stringify(v)); return true; }
-    catch (e) { storageOk = false; return false; }
+    const s = JSON.stringify(v);
+    try { localStorage.setItem(k, s); return true; }
+    catch (e) {
+      // Navegador lleno (sobre todo por lo que guarda el ranking): se libera lo
+      // prescindible y se reintenta. Antes la copia de la partida dejaba de
+      // guardarse sin avisar y, al recargar, se volvía a la de la nube.
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && /^ps\.rk\.c\./.test(key)) localStorage.removeItem(key);
+        }
+        localStorage.setItem(k, s); return true;
+      } catch (e2) { storageOk = false; return false; }
+    }
   }
   function remove(k) { try { localStorage.removeItem(k); } catch (e) { /* nada */ } }
 
@@ -102,8 +114,52 @@ G.DB = (() => {
       s.pupgDone = true;
     }
     s.tickets = Object.assign({ t1: 0, t10: 0 }, s.tickets);
+    sanitize(s);
     s.v = VERSION;
     return s;
+  }
+
+  /**
+   * Quita lo imposible de una partida editada a mano (la copia del navegador
+   * se puede tocar): números negativos o raros, mejoras por encima del
+   * máximo y Pokémon que no existen. Lo que sí sea posible lo frena el
+   * servidor (firestore.rules, saves).
+   */
+  function sanitize(s) {
+    const n = v => (Number.isFinite(+v) && +v > 0 ? Math.floor(+v) : 0);
+    s.coins = n(s.coins);
+    s.tickets.t1 = n(s.tickets.t1);
+    s.tickets.t10 = n(s.tickets.t10);
+    if (G.DEX_BY) for (const coll of ['owned', 'shiny']) {
+      for (const d of Object.keys(s[coll] || {})) if (!G.DEX_BY[d]) delete s[coll][d];
+    }
+    // Atajos: 4 huecos con un movimiento que exista (o null), sin repetir.
+    if (s.pbind && typeof s.pbind === 'object') {
+      for (const d of Object.keys(s.pbind)) {
+        const l = Array.isArray(s.pbind[d]) ? s.pbind[d].slice(0, 4) : [];
+        const seen = new Set();
+        s.pbind[d] = [0, 1, 2, 3].map(i => {
+          const id = l[i];
+          if (typeof id !== 'string' || (G.Moves && !G.Moves.BY_ID[id]) || seen.has(id)) return null;
+          seen.add(id); return id;
+        });
+      }
+    } else s.pbind = {};
+    // Veto: listas de movimientos que existen, sin repetir, como mucho 3.
+    if (s.pban && typeof s.pban === 'object') {
+      for (const d of Object.keys(s.pban)) {
+        const l = Array.isArray(s.pban[d]) ? s.pban[d] : [];
+        s.pban[d] = [...new Set(l.filter(id => typeof id === 'string' && (!G.Moves || G.Moves.BY_ID[id])))].slice(0, 3);
+      }
+    } else s.pban = {};
+    if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
+      const u = s.pupg[d];
+      if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
+      for (const id of Object.keys(u)) {
+        if (!G.Upgrades.BY[id]) delete u[id];
+        else u[id] = Math.min(G.Upgrades.BY[id].max, n(u[id]));
+      }
+    }
   }
 
   /**
@@ -171,10 +227,19 @@ G.DB = (() => {
   }
 
   /** Sustituye el contenido de `save` sin cambiar el objeto (otros módulos lo tienen). */
-  function applyInPlace(s) {
-    for (const k of Object.keys(save)) if (!(k in s)) delete save[k];
-    Object.assign(save, s);
+  // Copia `s` sobre la partida SIN cambiar los objetos de dentro (mejoras,
+  // Pokémon...): las pantallas abiertas guardan referencias a ellos. Antes se
+  // sustituían y una compra hecha justo después de subir la partida se
+  // apuntaba en la copia vieja: se cobraban las monedas y la mejora se perdía.
+  const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+  function assignDeep(dst, src) {
+    for (const k of Object.keys(dst)) if (!(k in src)) delete dst[k];
+    for (const k in src) {
+      if (isObj(src[k]) && isObj(dst[k])) assignDeep(dst[k], src[k]);
+      else dst[k] = src[k];
+    }
   }
+  function applyInPlace(s) { assignDeep(save, s); }
 
   const VALID = /^[A-Za-z0-9_ñÑáéíóúÁÉÍÓÚ]{3,16}$/;
 
@@ -265,7 +330,18 @@ G.DB = (() => {
   // cupo diario de escrituras); lo que cuesta algo (gacha, mejoras), a los
   // 30 s. La copia local se guarda siempre al momento (y se fusiona con la
   // nube al volver a entrar), y al ocultar o cerrar la pestaña se sube lo pendiente.
-  const PUSH_GAP = 5 * 60 * 1000, PUSH_GAP_URGENT = 30 * 1000;
+  // Tras tiradas y compras se sube a los 3 min (era 30 s: quien hacía muchas tiradas
+  // guardaba 2 veces por minuto y eran millones de escrituras al día). Lo hecho sigue
+  // en la copia del navegador al momento, y se sube al salir de la pestaña.
+  // Desde el 13-10-2026, lo normal cada 2 h (era 30 min: 216.000 jugadores al día
+  // guardaban unas 12 millones de veces); al cerrar la pestaña, siempre; al
+  // cambiar de pestaña, si hace más de 30 min.
+  // Lo que vale algo (tiradas, compras, Pokémon nuevos, shinies, premios,
+  // récords que entran en un top) se sube enseguida, y al acabar cada partida
+  // como mucho cada 30 min:
+  // con 2 h, quien abría el juego en otro aparato (o en el navegador de otra
+  // app) veía la copia vieja de la nube y creía que lo había perdido.
+  const PUSH_GAP = 5 * 60 * 1000, PUSH_GAP_URGENT = 15 * 1000, PUSH_GAP_RUN = 5 * 60 * 1000, HIDE_GAP = 5 * 60 * 1000;
   let syncState = 'local';           // 'ok' | 'syncing' | 'pending' | 'offline' | 'local'
   const listeners = new Set();
 
@@ -292,6 +368,9 @@ G.DB = (() => {
     firebase.initializeApp(cfg);
     auth = firebase.auth();
     fs = firebase.firestore();
+    // Algunas redes y antivirus cortan las actualizaciones en directo (amigos,
+    // invitaciones): Firebase prueba otra forma de recibirlas si hace falta.
+    try { fs.settings({ experimentalAutoDetectLongPolling: true }); } catch (e) { /* ya estaba */ }
     rtdb = cfg.databaseURL ? firebase.database() : null;
     // Sólo para pruebas: { ..., emulator: true } usa el emulador local de Firebase.
     if (cfg.emulator) {
@@ -302,7 +381,14 @@ G.DB = (() => {
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     auth.languageCode = 'es';
     addEventListener('online', () => { if (pending) pushNow(); });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && pending) pushNow(); });
+    // Al salir de la pestaña o cerrarla se sube lo pendiente, pero no más de una
+    // vez cada 10 min: la gente cambia de pestaña a menudo y cada partida se
+    // subía cada ~9 min en vez de cada 30 (12-10-2026, el mayor gasto de
+    // Firebase). Lo que no se sube sigue en la copia de este navegador y se
+    // sube al volver a entrar.
+    const hideFlush = () => { if (pending && Date.now() - lastPush > HIDE_GAP) pushNow(); };
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') hideFlush(); });
+    // Al cerrar o recargar la página, lo pendiente se sube siempre.
     addEventListener('pagehide', () => { if (pending) pushNow(); });
     return true;
   }
@@ -345,7 +431,10 @@ G.DB = (() => {
     // Sólo se sube si hay algo que la nube no tenga (cuenta nueva, progreso de
     // este ordenador sin subir...), y SIN esperar: antes el menú no salía hasta
     // terminar la subida, y con Firebase lento se tardaba hasta 9 s en entrar.
-    const same = remote && JSON.stringify(plain(migrate(remote))) === JSON.stringify(plain(save));
+    // (Comparar el texto entero daba "distinto" casi siempre y se subía en cada
+    // entrada: ahora sólo si esta copia es más nueva que la de la nube.)
+    const same = remote && !opts.legacy && (!cached || (cached.updated || 0) <= (remote.updated || 0));
+    lastPush = Date.now();       // la primera compra o ticket no sube al momento: espera como las demás
     if (!online) { pending = true; setSync('offline'); scheduleRetry(); }
     else if (same) setSync('ok');
     else pushNow();
@@ -358,6 +447,14 @@ G.DB = (() => {
    */
   function stopListening() { if (unlisten) { unlisten(); unlisten = null; } }
 
+  /*
+   * Si el admin ha baneado la cuenta del ranking (ban = true en la nube, ver
+   * firestore.rules), cada guardado tiene que conservarlo: se copia de la nube.
+   * Nunca se sube dos veces en menos de 65 s; mientras, todo está en el navegador.
+   */
+  const K_OK = 'ps.cloudok.', MIN_GAP = 65000;
+  const sinceOk = () => Date.now() - (+read(K_OK + uid) || 0);
+
   /** Sube la partida fusionándola con lo que haya en la nube (transacción). */
   function pushNow() {
     if (mode !== 'cloud' || guest || !save || !uid) return Promise.resolve();
@@ -366,6 +463,11 @@ G.DB = (() => {
     clearTimeout(pushT); pushT = 0; pushDue = 0;
     if (navigator.onLine === false) {
       pending = true; setSync('offline'); scheduleRetry();
+      return Promise.resolve();
+    }
+    if (sinceOk() < MIN_GAP) {
+      pending = true; setSync('pending');
+      schedulePush(MIN_GAP - sinceOk() + 500);
       return Promise.resolve();
     }
     pending = false;
@@ -377,13 +479,16 @@ G.DB = (() => {
       const snap = await tx.get(ref);
       const remote = snap.exists ? migrate(snap.data().save) : null;
       merged = remote ? merge(plain(save), remote) : plain(save);
-      tx.set(ref, { save: merged, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), v: VERSION });
+      const doc = { save: merged, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), v: VERSION };
+      if (snap.exists && snap.data().ban === true) doc.ban = true;
+      tx.set(ref, doc);
     });
     // Si la red se cae a medias, Firestore puede quedarse esperando: tope de 12 s.
     const timeout = new Promise((_, rej) => setTimeout(() => rej({ code: 'unavailable' }), 12000));
     let failed = false;
     pushing = Promise.race([tr, timeout]).then(() => {
       fails = 0;
+      write(K_OK + uid, Date.now());
       // Se FUSIONA con lo de ahora (no se sobrescribe): si has cambiado algo
       // mientras se subía (elegir compañero, una compra...), no se pierde.
       if (merged && save) { applyInPlace(merge(plain(save), merged)); write(K_CLOUD + uid, save); }
@@ -437,6 +542,8 @@ G.DB = (() => {
       'auth/popup-blocked': 'El navegador bloqueó la ventana de Google. Permite las ventanas emergentes.',
       'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase (Authentication > Configuración > Dominios autorizados).',
       'auth/operation-not-allowed': 'Ese método de inicio de sesión no está activado en Firebase.',
+      // Registro de cuentas nuevas desactivado en Firebase (Authentication > Configuración).
+      'auth/admin-restricted-operation': 'Ahora mismo no se pueden crear cuentas nuevas. Si ya tienes cuenta, entra normal; si no, puedes jugar como invitado.',
       'auth/requires-recent-login': 'Por seguridad, vuelve a iniciar sesión y repite la operación.',
       'permission-denied': 'La base de datos rechazó el acceso (revisa las reglas de Firestore).',
       'unavailable': 'Sin conexión con la base de datos.'
@@ -515,8 +622,10 @@ G.DB = (() => {
   }
 
   /**
-   * Guarda la partida actual (no hace nada en modo invitado).
-   * @param urgent  lo que ha costado algo (tiradas del gacha, mejoras): se sube antes
+   * Guarda la partida actual (no hace nada en modo invitado). En el navegador,
+   * al momento; en la nube:
+   * @param urgent  true: lo que vale algo (tiradas, compras, Pokémon, premios): enseguida
+   *                'run': al acabar una partida (como mucho cada 30 min) · false: cada 2 h
    */
   function commit(urgent = false) {
     if (guest || !key || !save) return false;
@@ -525,7 +634,8 @@ G.DB = (() => {
     write(K_CLOUD + uid, save);
     pending = true;
     setSync('pending');
-    schedulePush(Math.max(1200, (urgent ? PUSH_GAP_URGENT : PUSH_GAP) - (Date.now() - lastPush)));
+    const gap = urgent === 'run' ? PUSH_GAP_RUN : urgent ? PUSH_GAP_URGENT : PUSH_GAP;
+    schedulePush(Math.max(1200, gap - (Date.now() - lastPush)));
     return true;
   }
 
@@ -548,6 +658,31 @@ G.DB = (() => {
   }
 
   function nameAccount() { return !!(auth && auth.currentUser && (auth.currentUser.email || '').endsWith('@' + NAME_DOMAIN)); }
+
+  /*
+   * Recuperar la cuenta: las de nombre y contraseña no tienen correo de verdad
+   * (no se les puede mandar un enlace), así que se les ofrece VINCULAR su Gmail:
+   * si un día olvidan la contraseña, entran con Google y es la misma cuenta.
+   * Lo hace el sistema de cuentas de Firebase (gratis): ni una lectura ni una
+   * escritura de la base de datos.
+   */
+  function hasGoogle() {
+    const u = auth && auth.currentUser;
+    return !!(u && u.providerData.some(p => p.providerId === 'google.com'));
+  }
+  async function linkGoogle() {
+    if (!auth || !auth.currentUser) return { ok: false, error: 'Inicia sesión primero.' };
+    try {
+      await auth.currentUser.linkWithPopup(new firebase.auth.GoogleAuthProvider());
+      return { ok: true };
+    } catch (e) {
+      const c = (e && e.code) || '';
+      if (c === 'auth/provider-already-linked') return { ok: true };
+      if (c === 'auth/credential-already-in-use' || c === 'auth/email-already-in-use')
+        return { ok: false, error: 'Ese Gmail ya tiene su propia cuenta del juego. Usa otro Gmail.' };
+      return { ok: false, error: authError(e) };
+    }
+  }
 
   /**
    * Borra la cuenta y la partida (en la nube o en este navegador).
@@ -677,6 +812,7 @@ G.DB = (() => {
     get online() { return mode === 'cloud' && !guest && !!uid && !!save; },
     /** ¿La cuenta es de usuario y contraseña (no de Google)? */
     get nameAccount() { return nameAccount(); },
+    get hasGoogle() { return hasGoogle(); }, linkGoogle,
     get mode() { return mode; },
     get localReason() { return localReason; },
     get syncState() { return syncState; },
