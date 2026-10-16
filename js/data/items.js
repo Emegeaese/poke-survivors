@@ -50,17 +50,35 @@ G.Items = (() => {
       desc: L => `+${Math.round(at([0.10, 0.15, 0.20, 0.25, 0.30], L) * 100)}% de reducción de daño recibido.`,
       fx: L => ({ def: at([0.10, 0.15, 0.20, 0.25, 0.30], L) }) }
   ];
+  // Objetos de tipo (+10 % de daño por nivel a los movimientos de ese tipo). Además, un movimiento
+  // al nivel máximo evoluciona si llevas el objeto de su tipo (ver systems/levelup.js).
+  const TYPE_ITEMS = [
+    ['silkscarf', 'Pañuelo Seda', 'normal'], ['charcoal', 'Carbón', 'fire'], ['mysticwater', 'Agua Mística', 'water'],
+    ['miracleseed', 'Semilla Milagro', 'grass'], ['magnet', 'Imán', 'electric'], ['nevermeltice', 'Hielo Eterno', 'ice'],
+    ['blackbelt', 'Cinturón Negro', 'fighting'], ['poisonbarb', 'Flecha Venenosa', 'poison'], ['softsand', 'Arena Fina', 'ground'],
+    ['sharpbeak', 'Pico Afilado', 'flying'], ['twistedspoon', 'Cuchara Torcida', 'psychic'], ['silverpowder', 'Polvo Plata', 'bug'],
+    ['hardstone', 'Piedra Dura', 'rock'], ['spelltag', 'Hechizo', 'ghost'], ['dragonfang', 'Colmillo Dragón', 'dragon'],
+    ['blackglasses', 'Gafas de Sol', 'dark'], ['metalcoat', 'Revest. Metálico', 'steel'], ['fairyfeather', 'Pluma Hada', 'fairy']
+  ];
+  const TYPE_ITEM = {};     // tipo -> id del objeto
+  for (const [id, name, type] of TYPE_ITEMS) {
+    TYPE_ITEM[type] = id;
+    LIST.push({ id, name, type, bonus: L => 0.10 * L,
+      desc: L => `+${L * 10}% de daño a los movimientos de tipo ${G.U.TYPE_NAME[type]}. Con un movimiento ${G.U.TYPE_NAME[type]} al máximo, lo evoluciona.`,
+      fx: () => ({}) });
+  }
   const BY = {};
   for (const it of LIST) BY[it.id] = it;
 
   /** Uno al azar, distinto del que ya llevas (modo clásico). */
   function roll(except) {
-    const pool = LIST.filter(i => i.id !== except);
+    const classic = G.Settings.get('powers') === 'classic';
+    const pool = LIST.filter(i => i.id !== except && (!i.type || !classic));
     return G.U.pick(pool).id;
   }
 
   /** Valor de un dato por nivel (focussash.sec, shellbell.heal, rockyhelmet.thorn). */
   function val(id, key, L) { return at(BY[id][key], L); }
 
-  return { LIST, BY, roll, val, MAX_LEVEL, MAX_ITEMS, CLASSIC_LEVEL };
+  return { LIST, BY, TYPE_ITEM, roll, val, MAX_LEVEL, MAX_ITEMS, CLASSIC_LEVEL };
 })();

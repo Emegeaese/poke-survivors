@@ -101,8 +101,8 @@ G.HUD = (() => {
     const key = pl.mon.dex + (pl.shiny ? 's' : '');
     if (!hudAnim || hudAnimKey !== key) { hudAnim = new G.Sprites.Animator(pl.mon.dex, 0.5, !!pl.shiny); hudAnimKey = key; hudAnimT = performance.now(); }
     const now = performance.now();
-    hudAnim.loop('Idle');
-    hudAnim.update(Math.min(0.1, (now - hudAnimT) / 1000)); hudAnimT = now;
+    hudAnim.loop('Idle');   // retrato quieto, como la tarjeta del otro juego: no se actualiza la animación
+    hudAnimT = now;
     ctx.save();
     ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
     hudAnim.draw(ctx, Math.round(x + w / 2), Math.round(y + h - 4));

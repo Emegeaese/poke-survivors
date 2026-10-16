@@ -53,11 +53,17 @@ G.LevelUp = (() => {
     // --- objetos con nivel (poderes acumulados): uno nuevo, o +1 nivel a uno que ya tienes ---
     if (pl.stack) {
       const MAXL = G.Items.MAX_LEVEL;
+      // Un movimiento al máximo espera el objeto de su tipo: ese objeto sale siempre (si cabe).
+      const wanted = new Set();
+      for (const m of pl.moves) { const ev = G.Moves.evoInfo(m, pl.statsTaken, pl); if (ev && ev.item && !ev.ready) wanted.add(ev.item); }
       if (pl.itemCount < G.Items.MAX_ITEMS) {
-        for (const it of G.U.pickN(G.Items.LIST.filter(i => !pl.items[i.id]), 3)) {
+        const fresh = G.Items.LIST.filter(i => !pl.items[i.id]);
+        const pickedIt = [...fresh.filter(i => wanted.has(i.id)), ...G.U.pickN(fresh.filter(i => !wanted.has(i.id)), 3)].slice(0, 3);
+        for (const it of pickedIt) {
+          const forEvo = wanted.has(it.id);
           out.push({
-            w: 9, type: 'item', key: 'item:' + it.id,
-            icon: it.id, color: '#ffd23f', tag: 'Objeto · Nv.1',
+            w: forEvo ? 30 : 9, forEvo, type: 'item', key: 'item:' + it.id,
+            icon: it.id, color: '#ffd23f', tag: forEvo ? 'Objeto · desbloquea evolución' : 'Objeto · Nv.1',
             title: it.name, desc: it.desc(1),
             apply: p => p.addItem(it.id)
           });
@@ -79,7 +85,7 @@ G.LevelUp = (() => {
     // --- evoluciones: movimiento al máximo + su condición cumplida ---
     const waiting = {};                   // stat -> movimiento que la espera para evolucionar
     for (const m of pl.moves) {
-      const ev = G.Moves.evoInfo(m, pl.statsTaken);
+      const ev = G.Moves.evoInfo(m, pl.statsTaken, pl);
       if (!ev) continue;
       if (!ev.ready) { waiting[ev.needs] = m; continue; }
       out.push({
@@ -138,6 +144,10 @@ G.LevelUp = (() => {
     // Si hay una evolución lista, su carta dorada sale siempre.
     const evo = pool.findIndex(c => c.type === 'evo');
     if (evo >= 0) { const c = pool.splice(evo, 1)[0]; used.add(c.key); picked.push(c); }
+
+    // Y el objeto que espera un movimiento al máximo sale casi siempre.
+    const want = pool.findIndex(c => c.forEvo);
+    if (want >= 0 && picked.length < n && Math.random() < 0.7) { const c = pool.splice(want, 1)[0]; used.add(c.key); picked.push(c); }
 
     while (picked.length < n && pool.length) {
       const total = pool.reduce((a, c) => a + c.w, 0);

@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Objetos de tipo (Carbón, Agua Mística, Semilla Milagro, Pañuelo Seda...): +10% de daño por nivel a los movimientos de ese tipo. Un movimiento al nivel máximo evoluciona si llevas el objeto de su tipo (en Poderes acumulados). El retrato de la tarjeta de combate ya no se mueve.",
+     "Type items (Charcoal, Mystic Water, Miracle Seed, Silk Scarf...): +10% damage per level to moves of that type. A max-level move evolves if you carry its type item (Stacked powers). The battle card portrait no longer animates."],
     ["Tu Pokémon evoluciona durante la partida: 1.ª evolución al nivel 10, 2.ª al 24 y 3.ª al 40. Toma los stats del nuevo Pokémon, se cura un poco y en cooperativo tus amigos te ven cambiar.",
      "Your Pokémon evolves during the run: 1st evolution at level 10, 2nd at 24 and 3rd at 40. It takes the new Pokémon's stats, heals a bit, and in co-op your friends see you change."],
     ["Colección con tarjetas: cada Pokémon muestra sus tipos y el panel \"Inspeccionar\" enseña estadísticas, el Impulso (Espacio) y todos los movimientos que puede aprender.",

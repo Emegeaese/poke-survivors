@@ -538,10 +538,13 @@
   };
 
   /** ¿Puede evolucionar ya? → { name, needs, needName, text, ready } o null */
-  function evoInfo(m, statsTaken) {
+  function evoInfo(m, statsTaken, pl) {
     const e = EVO[m.id];
     if (!e || m.evolved || m.lvl < m.def.maxLvl || !EVO_MODS[m.kind]) return null;
     const [name, needs] = e;
+    // Poderes acumulados: pide el objeto de su tipo (Carbón para Fuego, etc.).
+    const ti = pl && pl.stack && G.Items.TYPE_ITEM[m.type];
+    if (ti) return { name, needs: 'item:' + ti, item: ti, needName: G.Items.BY[ti].name, text: EVO_MODS[m.kind].t, ready: pl.hasItem(ti) };
     return { name, needs, needName: NEED_NAME[needs], text: EVO_MODS[m.kind].t,
              ready: !!(statsTaken && statsTaken[needs]) };
   }

@@ -98,6 +98,11 @@ G.Player = class Player {
 
   // ---------------- stats efectivos ----------------
   get atk() { return this.baseAtk * this.atkMul * this.stackK * (1 + this.buffs.atk.n * this.buffs.atk.amount); }
+  /** Daño del jugador para un movimiento: tu ataque y el objeto de su tipo. */
+  atkFor(m) {
+    const id = m && G.Items.TYPE_ITEM[m.type];
+    return this.atk * (id && this.items[id] ? 1 + G.Items.BY[id].bonus(this.items[id]) : 1);
+  }
   /** Con poderes acumulados, cada uno pega algo menos cuantos más tienes (el total sube, pero no se dispara). */
   get stackK() { return this.stack ? 1 / (1 + 0.35 * Math.max(0, this.moves.length - 1)) : 1; }
   get spd() {
