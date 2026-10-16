@@ -719,16 +719,10 @@
 
       // Apoyos: icono encima, para saber a quién ir primero.
       const SUP = { healer: 'heart', shielder: 'shield', summoner: 'friends' };
-      if (SUP[this.behavior]) G.Icons.draw(ctx, SUP[this.behavior], Math.round(this.x - 6), Math.round(this.y - this.bodyH - (this.hp < this.maxHp ? 26 : 18)), 12);
+      if (SUP[this.behavior]) G.Icons.draw(ctx, SUP[this.behavior], Math.round(this.x - 6), Math.round(this.y - this.bodyH - 18), 12);
 
-      if (this.boss || this.hp < this.maxHp) {
-        const w = this.boss ? 90 : Math.max(22, this.r * 2);
-        const y = this.y - this.bodyH - 10;
-        ctx.fillStyle = 'rgba(0,0,0,.6)';
-        ctx.fillRect(this.x - w / 2, y, w, 3.4);
-        ctx.fillStyle = this.boss ? '#ffcb3d' : '#ff5f6d';
-        ctx.fillRect(this.x - w / 2, y, w * Math.max(0, this.hp / this.maxHp), 3.4);
-      }
+      // Sólo los jefes llevan barra de vida (debajo de ellos); los enemigos normales no.
+      if (this.boss) G.FX.hpBar(ctx, this.x, this.y + 8, Math.max(60, this.r * 3), this.hp / this.maxHp, true);
     }
   }
 

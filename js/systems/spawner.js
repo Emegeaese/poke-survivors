@@ -20,7 +20,7 @@ G.Spawner = (() => {
   const DENSITY = 0.24, DMG_K = 2.4, XP_K = 5.6;
   // La resistencia extra crece con la run: al principio ×3,3 y hasta ×5
   // hacia el minuto 6, cuando ya tienes ataques para tumbarlos.
-  const hpK = t => 3.3 + Math.min(1.7, t / 210);
+  const hpK = t => 3.3 + Math.min(1.7, t / 210 * G.Difficulty.cur.ramp);
   const SHINY_RATE = 1 / 4096;
   // Con la cámara lejos (vista de 4 veces más mundo) salen más enemigos y caben más a la vez.
   const zk = () => Math.min(2.6, Math.pow(G.Camera.zoomK || 1, 0.6));
@@ -84,8 +84,10 @@ G.Spawner = (() => {
     if (!pt) return null;
     const shiny = rollShiny(def.dex);
     const e = new G.Enemy(def, pt[0], pt[1], scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t)));
-    e.dmg *= DMG_K; e.xp = Math.round(e.xp * XP_K);
-    if (G.EnemyMgr.count >= CAP * zk() * ELITE_FROM) { e.maxHp = e.hp = Math.round(e.maxHp * 1.6); e.dmg *= 1.25; e.xp = Math.round(e.xp * 1.6); }
+    const D = G.Difficulty.cur;
+    e.dmg *= DMG_K * D.dmg; e.xp = Math.round(e.xp * XP_K); e.spd *= D.speed;
+    e.maxHp = e.hp = Math.round(e.maxHp * D.hp);
+    if (G.EnemyMgr.count >= CAP * zk() * D.spawn * ELITE_FROM) { e.maxHp = e.hp = Math.round(e.maxHp * 1.6); e.dmg *= 1.25; e.xp = Math.round(e.xp * 1.6); }
     if (shiny) e.makeShiny();
     if (G.Events.golden) e.makeGolden();
     G.EnemyMgr.add(e);
@@ -99,6 +101,8 @@ G.Spawner = (() => {
   function spawnBoss(pl, t, b) {
     const [x, y] = ringPoint(pl, Math.random() * 6.2832);
     const e = new G.Enemy(b, x, y, scaled(G.Enemies.bossScale(t), G.Coop.scaleHp(players.length) * (players.length > 1 ? 1.4 : 1)), true);
+    e.dmg *= G.Difficulty.cur.dmg;
+    e.maxHp = e.hp = Math.round(e.maxHp * G.Difficulty.cur.hp);
     if (rollShiny(b.dex)) e.makeShiny();
     G.EnemyMgr.add(e);
     say('¡' + e.name + (e.shiny ? ' shiny' : '') + ' salvaje apareció!', 3.2);
@@ -128,9 +132,9 @@ G.Spawner = (() => {
     const bossFight = G.EnemyMgr.bossAlive();
 
     // --- goteo normal ---
-    const cap = Math.round(CAP * zk());
+    const cap = Math.round(CAP * zk() * G.Difficulty.cur.spawn);
     if (G.EnemyMgr.count < cap) {
-      acc += rate(t) * zk() * G.Coop.scaleRate(players.length) * (bossFight ? 0.25 : 1) * dt;
+      acc += rate(t) * zk() * G.Difficulty.cur.spawn * G.Coop.scaleRate(players.length) * (bossFight ? 0.25 : 1) * dt;
       let n = Math.floor(acc);
       acc -= n;
       while (n-- > 0 && G.EnemyMgr.count < cap) spawnOne(anchor(), t);

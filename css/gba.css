@@ -258,3 +258,29 @@ body.gba {
   background: radial-gradient(ellipse 44% 56% at 50% 62%, color-mix(in srgb, var(--stage-c, #8a94b8) 42%, #ffffff) 0 70%, transparent 72%);
 }
 .gba .cell.locked canvas { background: radial-gradient(ellipse 44% 56% at 50% 62%, #b4b8cc 0 70%, transparent 72%); }
+
+/* ---------- dificultad ---------- */
+.diff-box { margin: 10px auto 0; max-width: 300px; padding: 8px 10px; background: rgba(16, 24, 48, .85); border: 3px solid #101018; border-radius: 6px; color: #f8f8f8; text-shadow: none; }
+.diff-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.diff-lbl { font-family: var(--title, 'PS2P', monospace); font-size: 7px; color: #c8d0e8; letter-spacing: 0; }
+.diff-opts { display: flex; gap: 4px; }
+.diff-opt { font-family: 'PS2P', monospace; font-size: 8px; padding: 6px 7px; color: #f8f8f8; background: rgba(255, 255, 255, .08); border: 2px solid #4a5478; border-radius: 4px; cursor: pointer; }
+.diff-opt:hover { border-color: #fff; }
+.diff-opt.on { background: var(--dc, #58b858); border-color: #fff; text-shadow: 1px 1px 0 rgba(0, 0, 0, .45); }
+.diff-blurb { font-family: 'VT323', monospace; font-size: 17px; color: #c8d0e8; margin-top: 4px; text-align: left; }
+body:not(.gba) .diff-box { font-size: 14px; }
+body:not(.gba) .diff-lbl { font-size: 11px; }
+body:not(.gba) .diff-opt { font-family: inherit; font-size: 13px; }
+
+/* ---------- pausa: poderes y estadísticas ---------- */
+.pause-tag span { display: inline-block; font-family: 'PS2P', monospace; font-size: 8px; padding: 4px 7px; color: #fff; background: var(--dc, #58b858); border-radius: 4px; text-shadow: 1px 1px 0 rgba(0, 0, 0, .45); }
+.pause-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: left; margin: 10px 0 8px; }
+.pause-grid .pl-h { font-family: 'PS2P', monospace; font-size: 8px; color: #5d6690; margin: 6px 0 4px; }
+.pause-grid .pl-row { display: flex; align-items: center; gap: 6px; font-family: 'VT323', monospace; font-size: 21px; line-height: 1.15; }
+.pause-grid .pl-nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pause-grid .pl-lv { font-size: 18px; color: #5d6690; }
+.pause-grid .ps-row { display: flex; justify-content: space-between; font-family: 'VT323', monospace; font-size: 21px; line-height: 1.2; border-bottom: 1px dashed #c8c8d8; }
+.pause-grid .ps-row b { font-weight: 400; }
+@media (max-width: 560px) { .pause-grid { grid-template-columns: 1fr; } }
+body:not(.gba) .pause-grid { gap: 12px; font-size: 14px; }
+body:not(.gba) .pause-tag span { display: inline-block; padding: 2px 8px; color: #fff; background: var(--dc, #58b858); border-radius: 6px; font-size: 12px; }

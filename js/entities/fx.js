@@ -275,6 +275,22 @@ G.FX = (() => {
     }
   }
 
-  return { clear, px, burst, spark, sp, twinkle, trail, dmgText, ring, slash, beam, update, draw,
+  /**
+   * Barra de vida debajo de un Pokémon (tú, tus compañeros y los jefes): borde oscuro,
+   * fondo gris y relleno de dos tonos, verde, amarillo o rojo; todo en píxeles enteros.
+   */
+  function hpBar(ctx, cx, y, w, f, boss = false) {
+    f = Math.max(0, Math.min(1, f));
+    const x = Math.round(cx - w / 2), yy = Math.round(y), h = boss ? 8 : 6;
+    ctx.fillStyle = '#101018'; ctx.fillRect(x - 2, yy - 2, w + 4, h + 4);
+    ctx.fillStyle = '#504848'; ctx.fillRect(x, yy, w, h);
+    if (f <= 0) return;
+    const fw = Math.max(2, Math.round(w * f)), top = Math.max(2, Math.round(h * 0.4));
+    const [a, b] = boss ? ['#f87070', '#d02838'] : f > 0.5 ? ['#70f870', '#48c048'] : f > 0.2 ? ['#f8e070', '#e0b020'] : ['#f88060', '#e03828'];
+    ctx.fillStyle = a; ctx.fillRect(x, yy, fw, top);
+    ctx.fillStyle = b; ctx.fillRect(x, yy + top, fw, h - top);
+  }
+
+  return { hpBar, clear, px, burst, spark, sp, twinkle, trail, dmgText, ring, slash, beam, update, draw,
            get count() { return parts.length + sprites.length + texts.length; } };
 })();

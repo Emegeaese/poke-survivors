@@ -45,6 +45,18 @@ G.MenuUI = (() => {
     $('menu-partner').classList.toggle('shiny', shiny);
     $('menu-partner-name').innerHTML = mon.name + (shiny ? ' ' + G.Icons.html('shiny', 24) : '');
     $('menu-partner-info').innerHTML = G.UI.typeChips(mon.types) + ' ' + G.UI.stars(mon.rarity);
+    // Dificultad de la próxima partida (Normal, Difícil, Pesadilla).
+    const dopts = $('menu-diff-opts');
+    dopts.innerHTML = '';
+    for (const id of G.Difficulty.IDS) {
+      const L = G.Difficulty.LEVELS[id], b = document.createElement('button');
+      b.className = 'diff-opt' + (id === G.Difficulty.chosen ? ' on' : '');
+      b.style.setProperty('--dc', L.color);
+      b.textContent = L.name;
+      b.onclick = () => { G.Settings.set('difficulty', id); G.Audio.sfx('select'); open(); };
+      dopts.appendChild(b);
+    }
+    $('menu-diff-blurb').textContent = G.Difficulty.LEVELS[G.Difficulty.chosen].blurb + (G.Difficulty.chosen === 'normal' ? '' : ' (No sube al ranking.)');
     // Normal / shiny a mano, aquí mismo (en el móvil no se encontraba en la ficha).
     const seg = $('menu-shiny');
     seg.classList.toggle('hidden', !G.DB.ownsShiny(mon.dex));

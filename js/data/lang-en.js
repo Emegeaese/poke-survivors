@@ -594,6 +594,8 @@ G.I18n.add({
   'Estilo de la interfaz': 'Interface style', 'Clásico': 'Classic',
   'ESPACIO': 'SPACE',
   'Poderes': 'Powers', 'Acumulados': 'Stacked', 'Objeto · Nv.1': 'Item · Lv.1', '¡Nivel extra!': 'Extra level!',
+  'Dificultad': 'Difficulty', 'Difícil': 'Hard', 'Pesadilla': 'Nightmare', 'Poderes': 'Powers', 'Objetos': 'Items',
+  'Daño': 'Damage', 'Recarga': 'Cooldown', 'Velocidad': 'Speed', 'Defensa': 'Defense', 'Regeneración': 'Regen', 'Imán': 'Magnet', 'Experiencia': 'Experience', 'Monedas': 'Coins',
   'Zoom de la cámara': 'Camera zoom', 'Cerca': 'Near', 'Lejos': 'Far',
   'Cerca: sprites grandes. Lejos: sprites a la mitad y el doble de mapa a la vista, como en Pokémon Survivors (salen más enemigos).': 'Near: big sprites. Far: half-size sprites and twice as much map in view, like Pokémon Survivors (more enemies spawn).',
   'Menús al estilo Game Boy Advance (paneles claros y letra pixel) o el estilo clásico azul.': 'Game Boy Advance-style menus (light panels and pixel font) or the classic blue style.',

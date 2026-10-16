@@ -203,8 +203,30 @@ G.RunUI = (() => {
     renderBond();
   }
 
+  /** Pausa estilo Pokémon Survivors: tus poderes y objetos a la izquierda y tus estadísticas a la derecha. */
+  function fillPause(pl) {
+    const D = G.Difficulty.cur;
+    $('pause-diff').innerHTML = `<span style="--dc:${D.color}">${D.name}</span>`;
+    const fx = v => '×' + v.toFixed(2);
+    const rows = [
+      ['Daño', fx(pl.atkMul * (1 + pl.buffs.atk.n * pl.buffs.atk.amount))],
+      ['Recarga', fx(pl.cdMul)],
+      ['Velocidad', Math.round(pl.spd)],
+      ['Defensa', Math.round(pl.reduction * 100) + '%'],
+      ['Regeneración', (pl.regen * 1).toFixed(1) + '/s'],
+      ['Imán', Math.round(pl.magnet)],
+      ['Experiencia', fx(pl.xpMul)],
+      ['Monedas', fx(pl.coinMul * D.coins)]
+    ];
+    $('pause-stats').innerHTML = rows.map(([k, v]) => `<div class="ps-row"><span>${k}</span><b>${v}</b></div>`).join('');
+    const mv = pl.moves.map(m => `<div class="pl-row">${G.Icons.html('move:' + m.id, 18)}<span class="pl-nm">${m.name}</span><span class="pl-lv">${m.evolved ? 'Evol.' : 'Nv.' + m.lvl}</span></div>`);
+    const it = Object.keys(pl.items).map(id => `<div class="pl-row item">${G.Icons.html(id, 18)}<span class="pl-nm">${G.Items.BY[id].name}</span><span class="pl-lv">Nv.${pl.items[id]}</span></div>`);
+    $('pause-loadout').innerHTML = `<div class="pl-h">Poderes</div>${mv.join('') || '<div class="pl-row">—</div>'}` + (it.length ? `<div class="pl-h">Objetos</div>${it.join('')}` : '');
+  }
+
   function showPause(coop = false) {
     const pl = G.Game.player;
+    if (pl) fillPause(pl);
     $('pause-keys').innerHTML = pl && pl.stack
       ? '<kbd>WASD</kbd> moverse · <kbd>Espacio</kbd> impulso · tus poderes atacan solos · <kbd>Esc</kbd> pausa'
       : '<kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>Esc</kbd> pausa';

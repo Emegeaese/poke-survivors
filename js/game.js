@@ -138,6 +138,7 @@ G.Game = (() => {
   /** @param coop  { seed, host, members } para una partida en grupo */
   function startRun(coop = null) {
     holdBy = []; awayBy = null;
+    G.Difficulty.begin(coop ? coop.diff : null);
     const save = G.DB.save;
     const mon = G.DEX_BY[save.partner];
     const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
@@ -346,7 +347,7 @@ G.Game = (() => {
     G.Audio.music(null);
     G.Audio.sfx(dead ? 'gameover' : 'back');
     const save = G.DB.save;
-    const mul = pl.coinMul;
+    const mul = pl.coinMul * G.Difficulty.cur.coins;
     const parts = {
       tiempo: Math.floor(time / 5),
       derrotados: Math.floor(pl.kills * 0.25),
@@ -378,7 +379,7 @@ G.Game = (() => {
     // Ranking: en solitario cada uno lo suyo; en grupo lo sube el anfitrión.
     const mark = { t: Math.floor(time), lv: pl.level, kills: pl.kills };
     // Si la partida se ha tocado (ver clean()), no sube al ranking (sin avisar); lo demás, sí.
-    const ok = clean();
+    const ok = clean() && G.Difficulty.id === 'normal';     // sólo la dificultad Normal sube al ranking
     const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
                : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
