@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Las mejoras (Mejoras) ahora valen para todos tus Pokémon, juegues con el que juegues. Lo que tenías por Pokémon se junta: te quedas con el nivel más alto de cada mejora. El Veto también es para todos.",
+     "Upgrades now apply to all your Pokémon, whichever you play with. What you had per Pokémon is merged: you keep the highest level of each upgrade. The Ban list is for everyone too."],
     ["Dificultad: Normal, Difícil y Pesadilla (en el menú, bajo tu compañero). Difícil: enemigos con 1,4× de vida, 1,45× de daño, 1,25× de cantidad y 1,1× de velocidad, +25% de monedas. Pesadilla: 1,8× de vida, 2× de daño, 1,5× de cantidad, 1,2× de velocidad, curas la mitad y +60% de monedas. En grupo manda la del anfitrión. Sólo la Normal sube al ranking.",
      "Difficulty: Normal, Hard and Nightmare (in the menu, below your partner). Hard: enemies with 1.4x HP, 1.45x damage, 1.25x amount and 1.1x speed, +25% coins. Nightmare: 1.8x HP, 2x damage, 1.5x amount, 1.2x speed, you heal half as much and +60% coins. In a group the host's setting applies. Only Normal counts for the leaderboard."],
     ["Pausa con tus poderes y objetos (con su nivel) y tus estadísticas, como en Pokémon Survivors. La vida de tu Pokémon y la de tus compañeros sale debajo de ellos; los enemigos normales ya no llevan barra, sólo los jefes.",

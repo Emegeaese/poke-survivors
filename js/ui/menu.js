@@ -332,15 +332,7 @@ G.MenuUI = (() => {
   function openUpgrades() {
     G.UI.show('scr-upgrades', true);
     const s = G.DB.save;
-    if (!upgDex || !s.owned[upgDex]) upgDex = s.partner;
-    // Selector con tus Pokémon: el compañero primero, luego los que ya tienen mejoras.
-    const sel = $('upg-mon');
-    const lv = d => Object.values(s.pupg[d] || {}).reduce((a, b) => a + b, 0);
-    const mons = Object.keys(s.owned).map(Number).filter(d => G.DEX_BY[d])
-      .sort((a, b) => (b === s.partner) - (a === s.partner) || lv(b) - lv(a) || a - b);
-    sel.innerHTML = mons.map(d => `<option value="${d}">${G.DEX_BY[d].name}${d === s.partner ? ' (compañero)' : ''}${lv(d) ? ' · ' + lv(d) + ' niveles' : ''}</option>`).join('');
-    sel.value = upgDex;
-    sel.onchange = () => { upgDex = +sel.value; G.Audio.sfx('select'); renderUpgrades(); };
+    upgDex = s.partner;      // las mejoras valen para todos tus Pokémon: se enseña el compañero de adorno
     renderUpgrades();
   }
 
@@ -387,7 +379,7 @@ G.MenuUI = (() => {
       box.appendChild(el);
       if (u.id === 'ban' && lvl > 0 && banOpen) box.appendChild(banPicker(lvl));
     }
-    box.appendChild(bindPanel());
+    if (G.Settings.get('powers') === 'classic') box.appendChild(bindPanel());     // acumulados: no hay huecos que fijar
   }
 
   // ---------------- atajos: hueco fijo para cada movimiento ----------------
@@ -428,8 +420,7 @@ G.MenuUI = (() => {
   let banOpen = false;
   function banList() {
     const s = G.DB.save;
-    s.pban = s.pban || {};
-    return s.pban[upgDex] || (s.pban[upgDex] = []);
+    return s.gban || (s.gban = []);
   }
   function banPicker(max) {
     const mon = G.DEX_BY[upgDex];

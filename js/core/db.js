@@ -86,7 +86,9 @@ G.DB = (() => {
       starter: null,          // dex que te tocó en el test
       personality: null,      // { trait, scores }
       upgrades: {},           // (antiguo) mejoras de la cuenta; ahora van por Pokémon
-      pupg: {},               // dex -> { id -> nivel }: mejoras de cada Pokémon
+      pupg: {},               // (antiguo) mejoras por Pokémon: ahora son de todos, ver gupg
+      gupg: {},               // id -> nivel: mejoras de la cuenta, valen para todos tus Pokémon
+      gban: [],               // movimientos vetados (Veto), para todos los Pokémon
       tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
@@ -109,6 +111,14 @@ G.DB = (() => {
     // v1 -> v2: había un único banner (Kanto) con el pity como número.
     if (typeof s.pity === 'number') s.pity = { 1: s.pity };
     // v2 -> v3: las mejoras eran de la cuenta; pasan al compañero de entonces.
+    // Mejoras de todos los Pokémon: de lo que tenías por Pokémon se queda el nivel más alto de cada una.
+    if (!s.gupgDone) {
+      for (const d in s.pupg || {}) for (const k in s.pupg[d] || {}) s.gupg[k] = Math.max(s.gupg[k] || 0, +s.pupg[d][k] || 0);
+      for (const k in s.upgrades || {}) s.gupg[k] = Math.max(s.gupg[k] || 0, +s.upgrades[k] || 0);
+      const bans = Object.values(s.pban || {}).filter(l => Array.isArray(l) && l.length).sort((a, b) => b.length - a.length)[0];
+      if (bans && !s.gban.length) s.gban = bans.slice(0, 3);
+      s.gupgDone = true;
+    }
     if (!s.pupgDone) {
       if (s.partner && Object.values(s.upgrades || {}).some(v => v > 0)) {
         s.pupg[s.partner] = Object.assign({}, s.upgrades);
@@ -169,6 +179,11 @@ G.DB = (() => {
         s.pban[d] = [...new Set(l.filter(id => typeof id === 'string' && (!G.Moves || G.Moves.BY_ID[id])))].slice(0, 3);
       }
     } else s.pban = {};
+    if (!isObj(s.gupg)) s.gupg = {};
+    if (G.Upgrades) for (const id of Object.keys(s.gupg)) {
+      if (!G.Upgrades.BY[id]) delete s.gupg[id]; else s.gupg[id] = Math.min(G.Upgrades.BY[id].max, n(s.gupg[id]));
+    }
+    s.gban = [...new Set((Array.isArray(s.gban) ? s.gban : []).filter(id => typeof id === 'string' && (!G.Moves || G.Moves.BY_ID[id])))].slice(0, 3);
     if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
       const u = s.pupg[d];
       if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
@@ -290,6 +305,10 @@ G.DB = (() => {
       for (const k in older.pupg[d]) mine[k] = Math.max(mine[k] || 0, older.pupg[d][k]);
     }
     r.pupgDone = r.pupgDone || older.pupgDone;
+    r.gupg = r.gupg || {};
+    for (const k in older.gupg || {}) r.gupg[k] = Math.max(r.gupg[k] || 0, older.gupg[k] || 0);
+    if (!(r.gban && r.gban.length)) r.gban = (older.gban || []).slice();
+    r.gupgDone = r.gupgDone || older.gupgDone;
     // Lo conseguido nunca se pierde: unión de legendarios, arenas, objetos, logros...
     for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach']) {
       r[coll] = r[coll] || {};
@@ -904,10 +923,9 @@ G.DB = (() => {
   }
 
   /** Mejoras compradas para un Pokémon: { id -> nivel }. */
-  function upgradesOf(dex) {
+  function upgradesOf() {
     if (!save) return {};
-    save.pupg = save.pupg || {};
-    return save.pupg[dex] || (save.pupg[dex] = {});
+    return save.gupg || (save.gupg = {});
   }
 
   /** Da la versión shiny (y la normal, si no la tenía). Devuelve true si es nueva. */

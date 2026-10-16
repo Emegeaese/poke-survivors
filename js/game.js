@@ -141,7 +141,7 @@ G.Game = (() => {
     G.Difficulty.begin(coop ? coop.diff : null);
     const save = G.DB.save;
     const mon = G.DEX_BY[save.partner];
-    const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
+    const perks = G.Upgrades.perks(G.DB.upgradesOf());
 
     G.UI.hideAll();
     G.UI.chrome(false);
@@ -171,7 +171,7 @@ G.Game = (() => {
     (save.pbind && save.pbind[mon.dex] || []).forEach((id, i) => { if (id) pl.bind[id] = i; });
     pl.addMove(G.startMoveOf(mon.dex));
     // Mejora "Veto": movimientos que no quieres que te salgan.
-    pl.banned = new Set((save.pban && save.pban[mon.dex] || []).slice(0, perks.bans));
+    pl.banned = new Set((save.gban || []).slice(0, perks.bans));
     // Mejora "Repertorio": un segundo movimiento de ataque al azar.
     if (perks.startMoves >= 2) {
       const pool = G.Moves.poolFor(mon).filter(id => !pl.hasMove(id) && !pl.banned.has(id) && G.Moves.BY_ID[id].kind !== 'buff');
