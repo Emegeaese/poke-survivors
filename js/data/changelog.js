@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Interfaz estilo Game Boy Advance (basada en Pokémon Survivors): paneles claros con doble marco, letras Press Start 2P y VT323, selección con ▶ rojo, barras de dos tonos y HUD a juego. Se puede volver al estilo clásico en Ajustes > Estilo de la interfaz.",
+     "Game Boy Advance-style interface (inspired by Pokémon Survivors): light panels with a double frame, Press Start 2P and VT323 fonts, red ▶ selection, two-tone bars and a matching HUD. You can go back to the classic style in Settings > Interface style."],
     ["HUD estilo Pokémon en ordenador: caja de combate abajo a la izquierda con retrato, nombre, nivel y barra de PS, y huecos de poderes cuadrados.",
      "Pokémon-style HUD on computers: a battle box at the bottom left with portrait, name, level and HP bar, and square power slots."],
     ["Píxel perfecto: en ordenador el mundo se dibuja a baja resolución y se amplía a un múltiplo entero, así todos los píxeles miden lo mismo (como en los juegos clásicos). Se puede cambiar en Ajustes > Píxel perfecto.",

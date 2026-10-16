@@ -19,8 +19,12 @@
 <link rel="preload" href="assets/fonts/PixelDigits.ttf" as="font" type="font/ttf" crossorigin>
 
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/gba.css">
+<link rel="preload" href="assets/fonts/PressStart2P.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/VT323.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
+<script>try { if ((JSON.parse(localStorage.getItem('ps.settings') || '{}').skin) !== 'classic') document.body.classList.add('gba'); } catch (e) { document.body.classList.add('gba'); }</script>
 
 <canvas id="game"></canvas>
 <!-- En móvil se juega en horizontal -->
@@ -515,6 +519,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=dfa4ab60f5"></script>
+<script defer src="js/app.min.js?v=83ee3c524a"></script>
 </body>
 </html>

@@ -3,6 +3,35 @@
  */
 G.HUD = (() => {
   const F = (w, s) => `${w} ${s}px Pixelify,"Segoe UI",system-ui,sans-serif`;
+  // Estilo GBA (Ajustes > Estilo de la interfaz): fuentes Press Start 2P / VT323 y marcos de papel.
+  const GBA = () => G.Settings.get('skin') !== 'classic';
+  const PS = s => `${s}px PS2P, monospace`, VT = s => `${s}px VT323, monospace`;
+  /** Texto con contorno de 4 direcciones y sombra, como los números del HUD del otro juego. */
+  function otext(ctx, t, x, y, col = '#f8f8f8', line = '#101020') {
+    ctx.fillStyle = line;
+    for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2], [2, 2]]) ctx.fillText(t, x + dx, y + dy);
+    ctx.fillStyle = col;
+    ctx.fillText(t, x, y);
+  }
+  /** Panel de papel con el doble marco GBA: borde oscuro, anillo de papel, anillo azul y papel. */
+  function gbaPanel(ctx, x, y, w, h) {
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x + 3, y + 7, w, h);
+    const ring = (i, c) => { ctx.fillStyle = c; ctx.fillRect(x + i, y + i, w - 2 * i, h - 2 * i); };
+    ctx.fillStyle = '#283040'; ctx.fillRect(x + 2, y, w - 4, h); ctx.fillRect(x, y + 2, w, h - 4);
+    ring(3, '#f8f8f8'); ring(6, '#6878a8'); ring(9, '#f8f8f8');
+  }
+  /** Barra de vida de dos tonos (el 40 % de arriba más claro), verde, amarilla o roja. */
+  function gbaHp(ctx, x, y, w, h, f) {
+    f = G.U.clamp(f, 0, 1);
+    ctx.fillStyle = '#404858'; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#504848'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+    if (f > 0) {
+      const [a, b] = f > 0.5 ? ['#70f870', '#48c048'] : f > 0.2 ? ['#f8e070', '#e0b020'] : ['#f88060', '#e03828'];
+      const fw = Math.max(1, Math.round((w - 4) * f)), top = Math.max(1, Math.round((h - 4) * 0.4));
+      ctx.fillStyle = a; ctx.fillRect(x + 2, y + 2, fw, top);
+      ctx.fillStyle = b; ctx.fillRect(x + 2, y + 2 + top, fw, h - 4 - top);
+    }
+  }
 
   function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -47,8 +76,32 @@ G.HUD = (() => {
     hudAnim.draw(ctx, Math.round(x + w / 2), Math.round(y + h - 4));
     ctx.restore();
   }
+  /** Caja de combate estilo GBA: papel con doble marco, retrato, nombre, nivel y PS. */
+  function gbaCard(ctx, w, h, pl) {
+    const cw = 232, ch = 74, x = 12, y = h - ch - 14;
+    gbaPanel(ctx, x, y, cw, ch);
+    // retrato con borde de tinta
+    ctx.fillStyle = '#283040'; ctx.fillRect(x + 12, y + 12, 50, 50);
+    ctx.fillStyle = '#cfdcf2'; ctx.fillRect(x + 14, y + 14, 46, 46);
+    portrait(ctx, pl, x + 14, y + 14, 46, 46);
+    ctx.textAlign = 'left';
+    ctx.font = PS(9); ctx.fillStyle = '#303040';
+    ctx.fillText(pl.mon.name.length > 11 ? pl.mon.name.slice(0, 10) + '.' : pl.mon.name, x + 70, y + 26);
+    ctx.textAlign = 'right';
+    ctx.font = PS(8);
+    ctx.fillText('Nv' + pl.level, x + cw - 12, y + 26);
+    ctx.textAlign = 'left';
+    ctx.font = PS(7); ctx.fillStyle = '#c83030';
+    ctx.fillText('PS', x + 70, y + 46);
+    gbaHp(ctx, x + 92, y + 38, cw - 92 - 14, 9, pl.hp / pl.maxHp);
+    ctx.font = VT(18); ctx.fillStyle = '#303040'; ctx.textAlign = 'right';
+    ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), x + cw - 14, y + 62);
+    return y;
+  }
+
   /** Caja de combate abajo a la izquierda: retrato, nombre, nivel y vida. */
   function battleCard(ctx, w, h, pl) {
+    if (GBA()) return gbaCard(ctx, w, h, pl);
     const cw = 214, ch = 62, x = 12, y = h - ch - 12;
     pxBox(ctx, x, y, cw, ch, PAPER, EDGE);
     pxBox(ctx, x + 5, y + 5, 52, 52, '#cfdcf2', EDGE);
@@ -91,12 +144,24 @@ G.HUD = (() => {
 
     // ---------- barra de experiencia (borde superior) ----------
     const xpF = pl.xp / pl.xpNext;
-    ctx.fillStyle = 'rgba(0,0,0,.5)';
-    ctx.fillRect(0, 0, w, 7);
-    const g = ctx.createLinearGradient(0, 0, w, 0);
-    g.addColorStop(0, '#4fd1ff'); g.addColorStop(1, '#a98bff');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
+    const gba = GBA();
+    if (gba) {
+      // Franja de 14 px de dos tonos y filo oscuro abajo; el nivel, a la derecha.
+      const hh = 14, fw = Math.round(w * G.U.clamp(xpF, 0, 1));
+      ctx.fillStyle = '#182030'; ctx.fillRect(0, 0, w, hh);
+      ctx.fillStyle = '#78d0f8'; ctx.fillRect(0, 0, fw, 5);
+      ctx.fillStyle = '#4898e8'; ctx.fillRect(0, 5, fw, hh - 5);
+      ctx.fillStyle = '#101018'; ctx.fillRect(0, hh, w, 3);
+      ctx.font = PS(8); ctx.textAlign = 'right';
+      otext(ctx, 'Nv ' + pl.level, w - 8, 11);
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      ctx.fillRect(0, 0, w, 7);
+      const g = ctx.createLinearGradient(0, 0, w, 0);
+      g.addColorStop(0, '#4fd1ff'); g.addColorStop(1, '#a98bff');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
+    }
 
     // ---------- vida + nivel ----------
     // Ordenador: caja de combate abajo a la izquierda. Móvil: arriba, como antes.
@@ -141,12 +206,19 @@ G.HUD = (() => {
 
     // ---------- reloj / bioma / kills ----------
     ctx.textAlign = 'center';
-    ctx.font = F(800, 26);
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.fillText(G.U.mmss(st.time), w / 2, 42);
-    ctx.font = F(600, 10);
-    ctx.fillStyle = '#8fa3c4';
-    ctx.fillText(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS', w / 2, 58);
+    if (gba) {
+      ctx.font = PS(20);
+      otext(ctx, G.U.mmss(st.time), w / 2, 44);
+      ctx.font = VT(20);
+      otext(ctx, G.World.biomeName() + '  ·  ' + pl.kills + ' derrotados  ·  ' + pl.coins + ' monedas', w / 2, 64, '#e8ecf8');
+    } else {
+      ctx.font = F(800, 26);
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.fillText(G.U.mmss(st.time), w / 2, 42);
+      ctx.font = F(600, 10);
+      ctx.fillStyle = '#8fa3c4';
+      ctx.fillText(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS', w / 2, 58);
+    }
 
     // ---------- clima (arriba a la derecha) ----------
     const wx = G.Weather.current;
@@ -167,10 +239,21 @@ G.HUD = (() => {
     const boss = G.EnemyMgr.all().find(e => e.boss && !e.dead);
     if (boss) {
       const bw = Math.min(420, w - 80);
-      bar(ctx, (w - bw) / 2, 70, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');
-      ctx.font = F(800, 10);
-      ctx.fillStyle = '#20160a';
-      ctx.fillText(boss.name.toUpperCase(), w / 2, 80);
+      if (gba) {
+        const bx = Math.round((w - bw) / 2), by = 84, bh = 14, f = G.U.clamp(boss.hp / boss.maxHp, 0, 1);
+        ctx.fillStyle = '#101018'; ctx.fillRect(bx, by, bw, bh);
+        ctx.fillStyle = '#301018'; ctx.fillRect(bx + 3, by + 3, bw - 6, bh - 6);
+        const fw = Math.round((bw - 6) * f);
+        ctx.fillStyle = '#f87070'; ctx.fillRect(bx + 3, by + 3, fw, 4);
+        ctx.fillStyle = '#d02838'; ctx.fillRect(bx + 3, by + 7, fw, bh - 10);
+        ctx.font = PS(8); ctx.textAlign = 'center';
+        otext(ctx, boss.name, w / 2, by - 5);
+      } else {
+        bar(ctx, (w - bw) / 2, 70, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');
+        ctx.font = F(800, 10);
+        ctx.fillStyle = '#20160a';
+        ctx.fillText(boss.name.toUpperCase(), w / 2, 80);
+      }
     }
 
     // ---------- aviso ----------

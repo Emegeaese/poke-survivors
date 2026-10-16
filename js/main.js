@@ -38,8 +38,10 @@
     if (maintenance()) return;
     if (broken()) return;
     G.I18n.startDom();
+    // Estilo de la interfaz: GBA (por defecto) o clásico; se cambia en Ajustes.
+    G.Settings.on(k => { if (k === 'skin') document.body.classList.toggle('gba', G.Settings.get('skin') !== 'classic'); });
     // Espera a la fuente pixel para que la UI no salte al cargarla.
-    const ready = document.fonts && document.fonts.load ? Promise.all([document.fonts.load('16px Pixelify'), document.fonts.load('16px Pixelify', '0123456789')]) : Promise.resolve();
+    const ready = document.fonts && document.fonts.load ? Promise.all([document.fonts.load('16px PS2P'), document.fonts.load('16px VT323'), document.fonts.load('16px Pixelify'), document.fonts.load('16px Pixelify', '0123456789')]) : Promise.resolve();
     ready.catch(() => {}).then(() => G.Flow.boot());
   }
   if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot);

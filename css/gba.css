@@ -1,0 +1,248 @@
+/* ============ gba.css — interfaz estilo Game Boy Advance ============
+ * Capa que se aplica con <body class="gba"> (Ajustes > Estilo de la interfaz).
+ * Inspirada en "Pokémon Survivors" (pedrobarretto, MIT): paneles claros con doble
+ * marco, selección con ▶ rojo, fuentes Press Start 2P y VT323 (OFL) y
+ * animaciones "a saltos". Quitando la clase se vuelve al estilo clásico.
+ */
+@font-face { font-family: 'PS2P'; src: url('../assets/fonts/PressStart2P.woff2') format('woff2'); font-display: block; }
+@font-face { font-family: 'VT323'; src: url('../assets/fonts/VT323.woff2') format('woff2'); font-display: block; }
+
+body.gba {
+  --px: 3px;
+  --paper: #f8f8f8;
+  --gba-ink: #303040;
+  --frame: #6878a8;
+  --edge-dark: #283040;
+  --sel: #e83838;
+  --row: #e8e8f0;
+  --dark: #283048;
+  --ink: #f8f8f8;
+  --muted: #a8b4d8;
+  --gold: #ffcb05;
+  --title: 'PS2P', monospace;
+  --body: 'VT323', monospace;
+  --font: 'VT323', monospace;
+  font: 22px/1.1 var(--body);
+  background: #101820;
+  letter-spacing: 0;
+}
+.gba button, .gba input, .gba select { font-family: var(--body); }
+.gba canvas { image-rendering: pixelated; }
+.gba .scr.dim { background: rgba(8, 8, 24, .6); }
+.gba .scr { animation: none; }
+
+/* ---------- panel: doble marco, como la caja de diálogo de GBA ---------- */
+.gba .box {
+  --ink: var(--gba-ink);
+  --muted: #5d6690;
+  --gold: #b06a00;
+  background: var(--paper);
+  color: var(--gba-ink);
+  border: var(--px) solid var(--edge-dark);
+  border-radius: calc(var(--px) * 3);
+  box-shadow: inset 0 0 0 var(--px) var(--paper), inset 0 0 0 calc(var(--px) * 2) var(--frame), 0 calc(var(--px) * 2) 0 rgba(0, 0, 0, .35);
+  padding: 22px 24px;
+  text-shadow: none;
+  animation: gba-pop .18s steps(4) both;
+}
+.gba .box h1, .gba .box h2, .gba .box h3 { font-family: var(--title); font-weight: 400; letter-spacing: 0; line-height: 1.35; color: var(--gba-ink); }
+.gba .box h2 { font-size: 15px; margin-bottom: 10px; }
+.gba .box h3 { font-size: 11px; }
+.gba .sub { font-size: 21px; color: var(--muted); }
+.gba .note { font-size: 18px; color: var(--muted); }
+.gba .box .gold, .gba .gold { color: #b06a00; }
+.gba .err { font-size: 20px; color: #c02838; }
+.gba .center { text-align: center; }
+@keyframes gba-pop { from { transform: scale(.88); } to { transform: none; } }
+
+/* ---------- botones ---------- */
+.gba .btn {
+  position: relative;
+  font-family: var(--title); font-weight: 400; font-size: 10px; line-height: 1.3;
+  min-height: 40px; padding: 11px 14px;
+  color: var(--gba-ink); text-shadow: none;
+  background: var(--row);
+  border: 3px solid transparent; border-radius: 6px;
+  box-shadow: none;
+  transition: none;
+}
+.gba .btn:hover, .gba .btn:focus-visible { filter: none; background: #fff; border-color: var(--sel); outline: none; }
+.gba .btn:hover::before, .gba .btn:focus-visible::before { content: '\25B6 '; color: var(--sel); }
+.gba .btn:active { transform: translateY(2px); box-shadow: none; }
+.gba .btn:disabled { filter: none; opacity: .5; cursor: not-allowed; }
+.gba .btn:disabled:hover { background: var(--row); border-color: transparent; }
+.gba .btn:disabled:hover::before { content: none; }
+.gba .btn.gold {
+  color: var(--edge-dark); background: #ffcb05; border-color: var(--edge-dark);
+  box-shadow: 0 3px 0 #2a5aa8; text-shadow: none;
+}
+.gba .btn.gold:hover { background: #ffe060; border-color: var(--sel); }
+.gba .btn.ghost { background: transparent; border: 2px solid var(--frame); }
+.gba .btn.ghost:hover { background: #fff; border-color: var(--sel); }
+.gba .btn.small { font-size: 9px; padding: 8px 10px; min-height: 0; }
+.gba .btn.danger { background: #e83838; color: #fff; border-color: #a02028; }
+.gba .btn.google { background: #fff; color: var(--gba-ink); border-color: var(--edge-dark); }
+
+/* ---------- menú principal (a la derecha, sobre fondo oscuro) ---------- */
+.gba .menu-item {
+  font-family: var(--title); font-weight: 400; font-size: 12px; line-height: 1.3;
+  color: var(--gba-ink); text-shadow: none; border-radius: 4px; padding: 8px 14px 8px 12px;
+}
+.gba .menu-item small { font-family: var(--body); font-size: 18px; color: var(--muted); letter-spacing: 0; margin-top: 2px; }
+.gba .menu-item::before {
+  content: '\25B6'; color: var(--sel); background: none; width: auto; height: auto;
+  left: -14px; top: 8px; font-family: var(--title); font-size: 11px; transform: none; transition: none;
+}
+.gba .menu-item:hover, .gba .menu-item:focus-visible { background: #e4e8f4; }
+.gba .menu-item.play { font-size: 15px; color: #b06a00; }
+.gba .menu-item small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+@media (max-height: 700px) { .gba .menu-item { font-size: 9px; } .gba .menu-item small { font-size: 16px; } .gba .menu-item.play { font-size: 11px; } }
+.gba .mi-ico { padding-left: 6px; }
+
+/* ---------- formularios ---------- */
+.gba label { font-size: 19px; color: var(--muted); }
+.gba .field {
+  background: #fff; color: var(--gba-ink); font-size: 22px; border: 3px solid var(--edge-dark); border-radius: 4px; padding: 8px 10px;
+}
+.gba .field:focus { border-color: var(--sel); }
+.gba .tab { background: var(--row); border: 2px solid var(--frame); border-radius: 4px; font-family: var(--title); font-size: 9px; font-weight: 400; color: var(--gba-ink); }
+.gba .tab.on { background: #ffcb05; border-color: var(--edge-dark); box-shadow: 0 3px 0 #2a5aa8; }
+.gba .answer { background: var(--row); border: 3px solid transparent; border-radius: 6px; color: var(--gba-ink); text-shadow: none; font-size: 22px; }
+.gba .answer:hover { background: #fff; border-color: var(--sel); }
+.gba .answer::before { content: '\25B6'; color: var(--sel); background: none; font-family: var(--title); font-size: 10px; width: auto; height: auto; top: 14px; margin: 0; }
+.gba .q { font-size: 26px; }
+.gba .progress { background: #504848; border: 2px solid #404858; border-radius: 3px; height: 10px; }
+.gba .progress i { background: linear-gradient(#70f870 0 40%, #48c048 40%); transition: none; }
+
+/* ---------- inicio de sesión / logo ---------- */
+.gba .logo .t1 { font-family: var(--title); font-weight: 400; font-size: clamp(14px, 2.4vw, 22px); line-height: 1.2; color: #ffcb05;
+  text-shadow: 3px 0 #2a5aa8, -3px 0 #2a5aa8, 0 3px #2a5aa8, 0 -3px #2a5aa8, 3px 3px #2a5aa8, -3px 3px #2a5aa8, 3px -3px #2a5aa8, -3px -3px #2a5aa8, 0 9px #101830; letter-spacing: 1px; }
+.gba .logo .t2 { font-family: var(--title); font-size: 9px; letter-spacing: 2px; color: #f8f8f8; text-shadow: 2px 2px 0 #101020; margin-top: 12px; }
+.gba .menu-left .logo .t1 { font-size: clamp(20px, 3.4vw, 34px); }
+.gba .login-tag, .gba .login-links { font-size: 19px; }
+.gba .credits-line { font-family: var(--body); font-size: 16px; color: #c8d0e8; text-shadow: 2px 2px 0 #101020; }
+.gba .online-now { font-family: var(--body); font-size: 18px; background: rgba(16, 24, 48, .75); border: 2px solid var(--frame); border-radius: 4px; color: #f8f8f8; text-shadow: 2px 2px 0 #101020; }
+.gba .partner-card .nm { font-family: var(--title); font-size: 13px; font-weight: 400; color: #f8f8f8; text-shadow: 2px 2px 0 #101020; }
+.gba .partner-card .lv { font-size: 19px; color: #c8d0e8; text-shadow: 2px 2px 0 #101020; }
+
+/* ---------- barra superior ---------- */
+.gba .pill {
+  font-family: var(--title); font-weight: 400; font-size: 10px; color: var(--gba-ink); text-shadow: none;
+  background: var(--paper); border: 3px solid var(--edge-dark); border-radius: 6px;
+  box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 4px var(--frame), 0 3px 0 rgba(0, 0, 0, .35); padding: 6px 12px;
+}
+.gba .topbar .btn { background: var(--paper); border-color: var(--edge-dark); box-shadow: 0 3px 0 rgba(0, 0, 0, .35); }
+.gba .topbar .btn:hover { background: #fff; border-color: var(--sel); }
+.gba .sync { box-shadow: 0 0 0 2px var(--edge-dark); }
+.gba .news-btn { font-family: var(--title); }
+
+/* ---------- rejillas, celdas y paneles interiores ---------- */
+.gba .panel { background: var(--row); border: 3px solid var(--frame); border-radius: 6px; box-shadow: none; color: var(--gba-ink); }
+.gba .grid { scrollbar-color: var(--frame) var(--row); }
+.gba .cell { background: var(--row); border: 2px solid var(--frame); border-radius: 4px; color: var(--gba-ink); text-shadow: none; transition: none; }
+.gba .cell:hover { transform: none; background: #fff; border-color: var(--sel); }
+.gba .cell.on { background: #fff; border-color: var(--sel); box-shadow: 0 0 0 2px #fff, 0 3px 0 rgba(0, 0, 0, .15); }
+.gba .cell.locked { background: #c8c8d8; opacity: 1; }
+.gba .cell.locked:hover { background: #c8c8d8; border-color: var(--frame); }
+.gba .cell b { font-family: var(--body); font-size: 17px; font-weight: 400; }
+.gba .cell .no { font-size: 15px; }
+.gba .stage {
+  background: var(--dark); border: 3px solid var(--edge-dark); border-radius: 6px;
+  box-shadow: inset 0 0 0 2px var(--stage-c, var(--frame)), 0 3px 0 rgba(0, 0, 0, .25);
+}
+.gba .stage.shiny { box-shadow: inset 0 0 0 2px #9ae6ff, 0 0 0 2px #fff, 0 3px 0 rgba(0, 0, 0, .25); }
+.gba .stat { font-size: 19px; }
+.gba .stat .bar { height: 10px; background: #504848; border: 2px solid #404858; border-radius: 3px; }
+.gba .stat .bar i { background: linear-gradient(#f8e070 0 40%, #e0b020 40%); }
+.gba .chip, .gba .gen-tab {
+  font-family: var(--body); font-size: 18px; color: var(--gba-ink); background: var(--row); border: 2px solid var(--frame); border-radius: 4px; text-shadow: none; transition: none;
+}
+.gba .gen-tab b { font-family: var(--title); font-weight: 400; font-size: 9px; }
+.gba .gen-tab small { color: var(--muted); }
+.gba .chip:hover, .gba .gen-tab:hover { background: #fff; border-color: var(--sel); }
+.gba .chip.on, .gba .gen-tab.on { background: #ffcb05; border-color: var(--edge-dark); color: var(--edge-dark); box-shadow: 0 3px 0 #2a5aa8; }
+.gba .gen-tab.on b, .gba .gen-tab.on small { color: var(--edge-dark); }
+.gba .seg button { background: var(--row); color: var(--gba-ink); font-family: var(--body); font-size: 18px; }
+.gba .seg button.on { background: #ffcb05; color: var(--edge-dark); }
+.gba .type, .gba .tag-chip { font-family: var(--title); font-size: 8px; border-radius: 4px; text-shadow: 1px 1px 0 rgba(0, 0, 0, .45); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .25); }
+
+/* ---------- cartas de subir de nivel y elecciones ---------- */
+.gba .card {
+  background: var(--row); border: 3px solid transparent; border-radius: 6px; padding: 10px 12px; color: var(--gba-ink); text-shadow: none; transition: none;
+}
+.gba .card:hover { background: #fff; border-color: var(--sel); transform: none; box-shadow: 0 0 0 2px #fff, 0 4px 0 rgba(0, 0, 0, .15); }
+.gba .card .ico { background: var(--dark); border-radius: 6px; }
+.gba .card .nm { font-family: var(--title); font-weight: 400; font-size: 11px; line-height: 1.4; }
+.gba .card .ds { font-size: 20px; color: #5d6690; }
+.gba .card .key { font-family: var(--title); font-size: 9px; color: #fff; background: var(--frame); border: 0; border-radius: 4px; padding: 4px 6px; }
+.gba .card:hover .key { background: var(--sel); }
+.gba .card.evo { background: linear-gradient(180deg, #fff8d0, #f8e090); border-color: #e0a020; }
+.gba .card.evo .nm { color: #7a4a00; }
+.gba .card.bond { background: linear-gradient(180deg, #ffe6f6, #f8c8e8); border-color: #d060a8; }
+.gba .cards.done .card.picked { border-color: var(--sel); background: #fff; }
+
+/* ---------- tickets, monedas y filas ---------- */
+.gba .fr-row, .gba .rk-row, .gba .lob-card, .gba .mission, .gba .ach, .gba .set-row, .gba .upg-item, .gba .leg-cell, .gba .tr-slot, .gba .egg-slot, .gba .prof-marks div, .gba .fav-slot, .gba .lay-panel {
+  background: var(--row); border: 2px solid var(--frame); border-radius: 6px; color: var(--gba-ink); text-shadow: none;
+}
+.gba .fr-row b, .gba .rk-row .who b, .gba .set-row b, .gba .mission b, .gba .egg-slot b { font-family: var(--body); font-size: 21px; font-weight: 400; }
+.gba .fr-row .st, .gba .set-row small, .gba .mission small, .gba .rk-row .who small { color: var(--muted); font-size: 18px; }
+.gba .rk-row.mine { background: #fff4c0; border-color: #e0b030; }
+.gba .rk-row .pos { font-family: var(--title); font-size: 11px; }
+.gba .rk-row.top1 .pos { color: #c89000; } .gba .rk-row.top2 .pos { color: #7a7a96; } .gba .rk-row.top3 .pos { color: #b86a2c; }
+.gba .rk-row .time { font-family: var(--title); font-size: 11px; }
+.gba .mission.ready, .gba .leg-cell.ok, .gba .ach.ok { border-color: #48a048; background: #e4f6e0; }
+.gba .mission .bar, .gba .egg-slot .bar { background: #504848; border: 2px solid #404858; border-radius: 3px; height: 10px; }
+.gba .mission .bar i, .gba .egg-slot .bar i { background: linear-gradient(#70f870 0 40%, #48c048 40%); }
+.gba .egg-slot.ready { border-color: #e0a020; background: linear-gradient(180deg, #fff8d0, #f8e090); box-shadow: none; }
+.gba .egg-empty { border-color: #a8a8c0; }
+.gba .tr-slot.ok { border-color: #48a048; background: #e4f6e0; }
+.gba .set-row .switch { border-radius: 3px; }
+.gba .pips i { background: #c8c8d8; border-radius: 0; } .gba .pips i.on { background: #48c048; }
+.gba .dup-n { font-family: var(--title); font-size: 8px; border-radius: 2px; padding: 3px 5px; }
+.gba .dups { background: var(--row); color: var(--gba-ink); border-radius: 4px; }
+.gba .rates div { border-bottom-color: #c8c8d8; }
+
+/* ---------- avisos ---------- */
+.gba .toast {
+  font-family: var(--body); font-size: 24px; color: var(--gba-ink); background: var(--paper); text-shadow: none;
+  border: 3px solid var(--edge-dark); border-radius: 6px;
+  box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 4px var(--frame), 0 4px 0 rgba(0, 0, 0, .35);
+}
+.gba .ach-pop { background: var(--paper); color: var(--gba-ink); border: 3px solid var(--edge-dark); border-radius: 6px; text-shadow: none; box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 4px var(--frame); }
+.gba .invite-pop { background: var(--paper); color: var(--gba-ink); border: 3px solid var(--edge-dark); text-shadow: none; }
+.gba .news-day h3, .gba .news-day h3 small { color: var(--gba-ink); }
+.gba .news-day li { font-size: 21px; }
+.gba .legal p, .gba .legal h3 { color: var(--gba-ink); }
+
+/* ---------- resultados de tiradas y huevos (sobre fondo oscuro) ---------- */
+.gba #pull-fx, .gba #egg-fx { background: rgba(8, 8, 24, .92); }
+.gba .pcard {
+  background: var(--paper); color: var(--gba-ink); text-shadow: none; border: 3px solid var(--rc, var(--edge-dark));
+  border-radius: 6px; box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 4px var(--frame), 0 4px 0 rgba(0, 0, 0, .35);
+}
+.gba .pcard b { font-family: var(--title); font-weight: 400; font-size: 9px; line-height: 1.4; }
+.gba .pcard .tag { font-size: 18px; }
+.gba .pcard .new { color: #c02838; font-family: var(--title); font-size: 8px; }
+.gba .pcard.r5 { animation: none; }
+.gba .stars { text-shadow: none; }
+
+/* ---------- ajustes y sonido ---------- */
+.gba .sound-panel { background: var(--paper); color: var(--gba-ink); border: 3px solid var(--edge-dark); text-shadow: none; }
+.gba .snd-row { font-size: 20px; }
+.gba kbd { font-family: var(--title); font-size: 9px; background: var(--row); color: var(--gba-ink); border: 2px solid var(--frame); border-radius: 3px; text-shadow: none; }
+.gba input[type=range] { accent-color: #6878a8; }
+
+/* ---------- retoques ---------- */
+/* Banner del gacha: texto claro sobre su degradado. */
+.gba .banner, .gba .banner h3, .gba .banner p, .gba .banner .sub { color: #f8f8f8; text-shadow: 2px 2px 0 #101020; }
+.gba .banner h3 { font-family: var(--title); font-size: 13px; font-weight: 400; }
+.gba .banner .sub, .gba .banner p { font-size: 20px; color: #e6ecff; }
+/* Textos de rareza (color claro) sobre papel: con contorno oscuro para que se lean. */
+.gba .rates span[style*="color"], .gba #dex-detail div[style*="color"], .gba .box span[style*="--rc"] {
+  text-shadow: 1px 0 #303040, -1px 0 #303040, 0 1px #303040, 0 -1px #303040;
+}
+.gba .pips i { background: #b4b8cc; }
+.gba .pips i.on { background: #48c048; }
+.gba .upg-item .ic { background: var(--dark); border-radius: 6px; }
+.gba .upg-head .stage { margin: 0; }

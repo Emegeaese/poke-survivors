@@ -79,6 +79,8 @@ G.SettingsUI = (() => {
              `<button class="chip ${G.I18n.lang === v ? 'on' : ''}" data-lang="${v}">${l}</button>`).join('')}</div>`
         + section('Calidad', 'Cuántos efectos y partículas se dibujan. <b>Auto</b> la baja sola si el juego va a tirones (ahora: ' + auto + ').')
         + choice('quality', [['auto', 'Auto'], ['high', 'Alta'], ['mid', 'Media'], ['low', 'Baja']])
+        + section('Estilo de la interfaz', 'Menús al estilo Game Boy Advance (paneles claros y letra pixel) o el estilo clásico azul.')
+        + choice('skin', [['gba', 'GBA'], ['classic', 'Clásico']])
         + section('Píxel perfecto', 'Dibuja el mundo con todos los píxeles del mismo tamaño, como en los juegos clásicos. <b>Auto</b>: sí en ordenador, no en móvil.')
         + choice('pixel', [['auto', 'Auto'], ['on', 'Sí'], ['off', 'No']])
         + section('Pantalla')

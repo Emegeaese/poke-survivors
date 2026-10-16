@@ -86,6 +86,8 @@ Basado en [PokéSurvivor de JPTER78](https://github.com/JPTER78/pokesurvivor). E
 autor original es MIT hasta el commit b297089 y PolyForm Noncommercial 1.0.0 desde
 entonces (ver [LICENSE](LICENSE) y [LICENSE-NONCOMMERCIAL.md](LICENSE-NONCOMMERCIAL.md)):
 esta versión también es **sin fines comerciales**, sin cobrar ni poner anuncios.
+Las fuentes **Press Start 2P** y **VT323** (SIL OFL 1.1, de @fontsource) están en `assets/fonts/` con sus licencias (`OFL-PressStart2P.txt`, `OFL-VT323.txt`). El estilo de interfaz GBA se inspira en [Pokémon Survivors](https://github.com/pedrobarretto/pokemon-survivors) (MIT).
+
 Los sprites (CC BY-NC 4.0), la fuente (OFL) y las marcas de Pokémon tienen sus propias
 condiciones: ver [CREDITS.md](CREDITS.md). Proyecto de fan sin ánimo de lucro.
 
