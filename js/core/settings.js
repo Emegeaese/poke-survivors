@@ -4,6 +4,7 @@
  *
  *   quality     'auto' | 'high' | 'mid' | 'low'   efectos y partículas
  *   skin        'gba' | 'classic'                 estilo de la interfaz (css/gba.css)
+ *   zoom        'near' | 'far'                    cámara cerca (sprites grandes) o lejos (el doble de mapa, como Pokémon Survivors)
  *   pixel       'auto' | 'on' | 'off'             píxel perfecto (auto: sí en PC, no en móvil)
  *   dmgNumbers  true/false                        números de daño
  *   calm        true/false                        menos sacudidas y destellos
@@ -18,7 +19,7 @@
  */
 G.Settings = (() => {
   const KEY = 'ps.settings';
-  const DEF = { quality: 'auto', skin: 'gba', pixel: 'auto', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null };
+  const DEF = { quality: 'auto', skin: 'gba', pixel: 'auto', zoom: 'near', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null };
   let s = Object.assign({}, DEF);
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* nada */ }
   const fns = new Set();

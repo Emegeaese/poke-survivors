@@ -580,7 +580,7 @@ G.World = (() => {
   function drawVignette(ctx, w, h) {
     const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.34, w / 2, h / 2, Math.max(w, h) * 0.78);
     g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(0,0,0,.5)');
+    g.addColorStop(1, G.Settings.get('skin') !== 'classic' ? 'rgba(0,0,0,.2)' : 'rgba(0,0,0,.5)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
   }

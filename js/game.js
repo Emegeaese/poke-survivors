@@ -35,7 +35,7 @@ G.Game = (() => {
     wctx = wcv.getContext('2d');
     resize();
     addEventListener('resize', resize);
-    G.Settings.on(k => { if (k === 'pixel') resize(); });
+    G.Settings.on(k => { if (k === 'pixel' || k === 'zoom') resize(); });
     G.Touch.init(cv);
     // En móvil: al cambiar de app o girarlo en vertical, la partida se pausa.
     document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
@@ -53,18 +53,23 @@ G.Game = (() => {
     cv.width = Math.round(w * dpr);
     cv.height = Math.round(h * dpr);
     const p = G.Settings.get('pixel');
+    const zoom = G.Settings.get('zoom') === 'far' ? 0.5 : 1;
     pix = p === 'on' || (p !== 'off' && !G.Settings.touch);
     if (pix) {
       // Cada píxel interno ocupa Sd píxeles de pantalla (entero). Se busca un ancho interno de unos 780
       // (como mucho, sin bajar de ~280 de alto).
       const pw = cv.width, ph = cv.height;
-      Sd = Math.max(1, Math.round(pw / 780));
-      while (Sd > 1 && ph / Sd < 280) Sd--;
+      // Lejos (como Pokémon Survivors): un lienzo de unos 300 de alto, a ×2 o ×3.
+      if (zoom < 1) Sd = Math.max(1, Math.round(ph / 300));
+      else {
+        Sd = Math.max(1, Math.round(pw / 780));
+        while (Sd > 1 && ph / Sd < 280) Sd--;
+      }
       iw = Math.ceil(pw / Sd); ih = Math.ceil(ph / Sd);
       ox = -Math.floor((iw * Sd - pw) / 2); oy = -Math.floor((ih * Sd - ph) / 2);
       wcv.width = iw; wcv.height = ih;
-      G.Camera.resizePx(iw, ih, Sd / dpr, ox / dpr, oy / dpr);
-    } else G.Camera.resize(w, h, dpr);
+      G.Camera.resizePx(iw, ih, Sd / dpr, ox / dpr, oy / dpr, zoom);
+    } else G.Camera.resize(w, h, dpr, zoom);
     checkOrientation();
   }
 
@@ -88,6 +93,7 @@ G.Game = (() => {
     wctx.clearRect(0, 0, iw, ih);
     wctx.imageSmoothingEnabled = false;
     wctx.save();
+    wctx.scale(G.Camera.scale, G.Camera.scale);
     G.Camera.apply(wctx);
     try { draw(); } finally { wctx.restore(); ctx = main; }
     main.setTransform(1, 0, 0, 1, 0, 0);

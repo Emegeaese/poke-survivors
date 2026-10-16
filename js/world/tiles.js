@@ -11,13 +11,14 @@ G.Tiles = (() => {
 
   const BIOMES = [
     { name: 'Bosque Umbrío', liquid: 'water',
-      floor: ['#3e7a39', '#44813d', '#397134'], dirt: ['#7d6742', '#735e3b', '#86704a'],
-      speck: '#2f5f2b', light: '#5f9d50', flowers: ['#f4d65c', '#f39ac0', '#eef2ff'],
+      // Paleta plana y clara (verdes #80ba61 / #68a14e y caminos #c0ac7d, como en Pokémon Survivors).
+      floor: ['#80ba61', '#79b35c', '#72ac57'], dirt: ['#c0ac7d', '#b9a576', '#b29e6f'],
+      speck: '#68a14e', light: '#8fc56f', flowers: ['#f4d65c', '#f39ac0', '#eef2ff'],
       wallTop: ['#5d6e49', '#677a50', '#566544'], wallLight: '#88a06e', wallEdge: '#26301f',
       wallFace: ['#3e4934', '#363f2d'], wallFaceDark: '#232a1d',
-      liq: '#3b7fc6', liqDeep: '#2c64a6', foam: '#b3defa', shore: '#2b5b2a',
-      prop: 'tree', leaf: ['#235a2b', '#2f7535', '#45943f', '#64b252'], trunk: ['#5b3b22', '#7a5130'],
-      rock: ['#5e6670', '#7f8893', '#a1aab4'], grass: ['#2f6b2c', '#4c9a3f', '#7cc45a'] },
+      liq: '#3c74cc', liqDeep: '#2c5cb0', foam: '#d8f0ff', shore: '#4f8a3e',
+      prop: 'tree', leaf: ['#1a4c20', '#2b6e39', '#478e45', '#94d468'], trunk: ['#4a2e18', '#7a5130'],
+      rock: ['#5e6670', '#7f8893', '#a1aab4'], grass: ['#4a8240', '#5c9345', '#72ac57'] },
     { name: 'Cueva Cristal', liquid: 'water',
       floor: ['#4d5778', '#535e81', '#47506f'], dirt: ['#3c4462', '#424a69', '#37405b'],
       speck: '#3b4363', light: '#6a78a4', flowers: ['#8fe3ff', '#c9a6ff', '#7ef0d0'],
@@ -189,6 +190,8 @@ G.Tiles = (() => {
     for (let j = 0; j < gw; j++) for (let i = 0; i < gw; i++)
       grid[j * gw + i] = field(gx0 + (i - 1) * S, gy0 + (j - 1) * S);
     const mask = new Uint8Array(W * (W + 1));
+    // Estilo GBA: manchas de tierra más pequeñas (caminos), como en Pokémon Survivors.
+    const dirtTh = G.Settings.get('skin') !== 'classic' ? 0.70 : 0.64;
     for (let y = -1; y < W; y++) {
       const fy = (y + S) / S, j = Math.floor(fy), v = fy - j;
       for (let x = 0; x < W; x++) {
@@ -197,7 +200,7 @@ G.Tiles = (() => {
         const c = grid[(j + 1) * gw + i], d = grid[(j + 1) * gw + i + 1];
         let val = (a + (b - a) * u) * (1 - v) + (c + (d - c) * u) * v;
         val += (H((gx0 + x) >> 1, (gy0 + y) >> 1, seed + 9) - 0.5) * 0.05;
-        mask[(y + 1) * W + x] = val > 0.64 ? 1 : 0;
+        mask[(y + 1) * W + x] = val > dirtTh ? 1 : 0;
       }
     }
     // dirtAt(x, y) en coordenadas locales del chunk (y puede ser -1).

@@ -5,6 +5,7 @@
 G.Camera = {
   x: 0, y: 0,
   scale: 1,
+  zoomK: 1,                // 1 = cerca; 4 = lejos (la vista abarca 4 veces más mundo): lo usa el generador de enemigos
   k: 1, ox: 0, oy: 0,    // para llevar el mundo a la pantalla (px CSS por unidad, y desfase): ver toScreen()
   VIEW_W: 768,              // un 20% más de vista que al principio (640)
   shake: 0,
@@ -17,9 +18,10 @@ G.Camera = {
   // también un alto mínimo de mundo, para no ver una franja estrecha.
   MIN_VIEW_H: 420,
 
-  resize(cssW, cssH, dpr = 1) {
+  resize(cssW, cssH, dpr = 1, zoom = 1) {
     this.dpr = dpr;
-    this.scale = Math.min(cssW / this.VIEW_W, cssH / this.MIN_VIEW_H);
+    this.zoomK = 1 / (zoom * zoom);
+    this.scale = Math.min(cssW / this.VIEW_W, cssH / this.MIN_VIEW_H) * zoom;
     this.w = cssW / this.scale;
     this.h = cssH / this.scale;
     this.k = this.scale; this.ox = 0; this.oy = 0;
@@ -30,12 +32,13 @@ G.Camera = {
    * píxeles (1 unidad de mundo = 1 píxel) que luego se amplía a un múltiplo
    * entero. Así todos los píxeles de arte miden lo mismo.
    */
-  resizePx(iw, ih, k, ox, oy) {
+  resizePx(iw, ih, k, ox, oy, zoom = 1) {
     this.dpr = 1;
-    this.scale = 1;
-    this.w = iw;
-    this.h = ih;
-    this.k = k; this.ox = ox; this.oy = oy;
+    this.scale = zoom;                 // píxeles internos por unidad de mundo (1 = cerca, 0,5 = lejos)
+    this.w = iw / zoom;
+    this.h = ih / zoom;
+    this.k = k * zoom; this.ox = ox; this.oy = oy;
+    this.zoomK = 1 / (zoom * zoom);
   },
 
   /** Posición en pantalla (px CSS) de un punto del mundo. */

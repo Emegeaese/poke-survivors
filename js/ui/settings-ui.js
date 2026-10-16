@@ -81,6 +81,8 @@ G.SettingsUI = (() => {
         + choice('quality', [['auto', 'Auto'], ['high', 'Alta'], ['mid', 'Media'], ['low', 'Baja']])
         + section('Estilo de la interfaz', 'Menús al estilo Game Boy Advance (paneles claros y letra pixel) o el estilo clásico azul.')
         + choice('skin', [['gba', 'GBA'], ['classic', 'Clásico']])
+        + section('Zoom de la cámara', 'Cerca: sprites grandes. Lejos: sprites a la mitad y el doble de mapa a la vista, como en Pokémon Survivors (salen más enemigos).')
+        + choice('zoom', [['near', 'Cerca'], ['far', 'Lejos']])
         + section('Píxel perfecto', 'Dibuja el mundo con todos los píxeles del mismo tamaño, como en los juegos clásicos. <b>Auto</b>: sí en ordenador, no en móvil.')
         + choice('pixel', [['auto', 'Auto'], ['on', 'Sí'], ['off', 'No']])
         + section('Pantalla')

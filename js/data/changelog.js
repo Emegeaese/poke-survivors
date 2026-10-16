@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Mundo más claro y plano, como en Pokémon Survivors: verdes suaves, caminos de tierra más pequeños y números de daño con letra pixel y contorno. Nueva opción en Ajustes > Zoom de la cámara: Cerca (sprites grandes) o Lejos (sprites a la mitad y el doble de mapa a la vista; salen más enemigos).",
+     "Lighter, flatter world, like Pokémon Survivors: soft greens, smaller dirt paths and damage numbers in a pixel font with an outline. New option in Settings > Camera zoom: Near (big sprites) or Far (half-size sprites and twice as much map in view; more enemies spawn)."],
     ["Interfaz estilo Game Boy Advance (basada en Pokémon Survivors): paneles claros con doble marco, letras Press Start 2P y VT323, selección con ▶ rojo, barras de dos tonos y HUD a juego. Se puede volver al estilo clásico en Ajustes > Estilo de la interfaz.",
      "Game Boy Advance-style interface (inspired by Pokémon Survivors): light panels with a double frame, Press Start 2P and VT323 fonts, red ▶ selection, two-tone bars and a matching HUD. You can go back to the classic style in Settings > Interface style."],
     ["HUD estilo Pokémon en ordenador: caja de combate abajo a la izquierda con retrato, nombre, nivel y barra de PS, y huecos de poderes cuadrados.",

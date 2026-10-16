@@ -592,6 +592,8 @@ G.I18n.add({
   // ---------------- píxel perfecto ----------------
   'Píxel perfecto': 'Pixel perfect', 'Sí': 'Yes',
   'Estilo de la interfaz': 'Interface style', 'Clásico': 'Classic',
+  'Zoom de la cámara': 'Camera zoom', 'Cerca': 'Near', 'Lejos': 'Far',
+  'Cerca: sprites grandes. Lejos: sprites a la mitad y el doble de mapa a la vista, como en Pokémon Survivors (salen más enemigos).': 'Near: big sprites. Far: half-size sprites and twice as much map in view, like Pokémon Survivors (more enemies spawn).',
   'Menús al estilo Game Boy Advance (paneles claros y letra pixel) o el estilo clásico azul.': 'Game Boy Advance-style menus (light panels and pixel font) or the classic blue style.',
   'Dibuja el mundo con todos los píxeles del mismo tamaño, como en los juegos clásicos. <b>Auto</b>: sí en ordenador, no en móvil.': 'Draws the world with every pixel the same size, like classic games. <b>Auto</b>: yes on computers, no on phones.'
 });

@@ -254,13 +254,23 @@ G.FX = (() => {
       const k = 1 - t.t / t.life;
       ctx.save();
       ctx.globalAlpha = Math.min(1, k * 2.2);
-      ctx.font = (t.big ? '700 20px' : '700 13px') + ' Pixelify,"Segoe UI",sans-serif';
       ctx.textAlign = 'center';
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'rgba(0,0,0,.75)';
-      ctx.strokeText(t.s, t.x, t.y);
-      ctx.fillStyle = t.color;
-      ctx.fillText(t.s, t.x, t.y);
+      if (G.Settings.get('skin') !== 'classic') {
+        // Estilo GBA: Press Start 2P con contorno de 1 px, en el cuadro de píxeles.
+        ctx.font = (t.big ? 12 : 8) + 'px PS2P, monospace';
+        const x = Math.round(t.x), y = Math.round(t.y);
+        ctx.fillStyle = '#101020';
+        for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]]) ctx.fillText(t.s, x + dx, y + dy);
+        ctx.fillStyle = t.color;
+        ctx.fillText(t.s, x, y);
+      } else {
+        ctx.font = (t.big ? '700 20px' : '700 13px') + ' Pixelify,"Segoe UI",sans-serif';
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(0,0,0,.75)';
+        ctx.strokeText(t.s, t.x, t.y);
+        ctx.fillStyle = t.color;
+        ctx.fillText(t.s, t.x, t.y);
+      }
       ctx.restore();
     }
   }
