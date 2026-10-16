@@ -206,9 +206,12 @@ G.Pickups = (() => {
       ctx.fillStyle = '#000';
       ctx.beginPath(); ctx.ellipse(p.x, p.y, r * 0.9, r * 0.35, 0, 0, 6.2832); ctx.fill();
 
-      ctx.globalAlpha = 0.3;
-      ctx.fillStyle = k.glow;
-      ctx.beginPath(); ctx.arc(p.x, y, r * 2, 0, 6.2832); ctx.fill();
+      // Sólo el brillo de la experiencia y los tickets; el resto, como en Pokémon Survivors: dibujo y sombra.
+      if (p.kind === 'xp' || p.kind === 'xpBig' || p.kind === 'ticket' || p.kind === 'ticket10') {
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = k.glow;
+        ctx.beginPath(); ctx.arc(p.x, y, r * 2, 0, 6.2832); ctx.fill();
+      }
 
       ctx.globalAlpha = 1;
       ctx.fillStyle = k.color;
@@ -218,11 +221,10 @@ G.Pickups = (() => {
         ctx.lineTo(p.x, y + r); ctx.lineTo(p.x - r * 0.78, y);
         ctx.closePath(); ctx.fill();
       } else if (p.kind === 'coin') {
-        // Moneda que gira: elipse que se estrecha.
-        const sx = Math.max(0.25, Math.abs(Math.cos(p.t * 0.9)));
-        ctx.beginPath(); ctx.ellipse(p.x, y, r * sx, r, 0, 0, 6.2832); ctx.fill();
-        ctx.fillStyle = '#b8860b';
-        ctx.beginPath(); ctx.ellipse(p.x, y, r * sx * 0.5, r * 0.5, 0, 0, 6.2832); ctx.fill();
+        // Moneda / montón / bolsa de Pokémon Survivors, según lo que valga.
+        const v = p.value || 0;
+        G.Icons.draw(ctx, v >= 150 ? 'moneybag' : v >= 40 ? 'coinstack' : 'coin', p.x - 9, y - 10, 18);
+        continue;
       } else {
         // Baya, imán y bomba: su icono pixel art.
         const ICON = { heal: 'berry', magnet: 'magnet', bomb: 'bomb', ticket: 'ticket', ticket10: 'ticket10', ball: 'pokeball' };

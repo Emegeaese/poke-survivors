@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Mapa con el estilo de Pokémon Survivors: suelo con zonas más oscuras y caminos de tierra, matas y flores; altares con pedestal y orbe, cofres, monedas (moneda, montón y bolsa) y Poké Balls sin el halo de antes.",
+     "Map in the Pokémon Survivors style: ground with darker zones and dirt paths, tufts and flowers; altars with pedestal and orb, chests, coins (coin, stack, bag) and Poké Balls without the old glow."],
     ["Iconos de movimientos con el arte pixel de Pokémon Survivors, emparejados uno a uno con los nuestros (los potenciadores y Sustituto conservan el suyo).",
      "Move icons now use the Pokémon Survivors pixel art, matched one by one with ours (buffs and Substitute keep theirs)."],
     ["Iconos de objetos, Poké Ball, baya, imán y monedas con el arte pixel de Pokémon Survivors (MIT, pedrobarretto).",

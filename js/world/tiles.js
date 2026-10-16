@@ -570,6 +570,26 @@ G.Tiles = (() => {
 
     /** Altar de poder. variante = efecto*2 + (usado ? 1 : 0). */
     altar(B, variant) {
+      if (G.Settings.get('skin') !== 'classic' && G.ArtPS) {
+        // Pedestal de Pokémon Survivors (MIT) con el orbe del poder encima.
+        const ped = G.ArtPS.sprite(['..1111111..', '.122222221.', '11333333311', '.1111111111', '...13431...', '...13431...',
+          '...13331...', '...13431...', '..1333331..', '.122222221.', '13333333331', '11111111111'],
+          { 1: '#383048', 2: '#d0c8d8', 3: '#9890a8', 4: '#f8e8a0' }, 2, '#181820');
+        const e = variant >> 1, u = variant & 1;
+        const OC = (u ? ['#6b7380', '#4a505c', '#9aa2ae'] : [['#ff5f6d', '#c23a4b', '#ffd3d8'], ['#5fd4ff', '#2a8fd0', '#d8f6ff'],
+                    ['#ff8ad8', '#b03d84', '#ffe0f4'], ['#ffd23f', '#c08a10', '#fff3b0']][e]);
+        const cv = document.createElement('canvas'); cv.width = ped.width; cv.height = ped.height + 14;
+        const x = cv.getContext('2d');
+        x.drawImage(ped, 0, 14);
+        const cx = ped.width / 2, cy = 6;
+        for (let yy = -7; yy <= 7; yy++) for (let xx = -7; xx <= 7; xx++) {
+          const d = Math.hypot(xx + 0.5, yy + 0.5);
+          if (d > 6.4) continue;
+          x.fillStyle = d > 5.2 ? '#181820' : (-xx * 0.5 - yy * 0.7) > 1.6 ? OC[2] : d > 3.8 ? OC[1] : OC[0];
+          x.fillRect(Math.floor(cx) + xx, cy + yy, 1, 1);
+        }
+        return cv;
+      }
       const P = Pix(18, 27);
       const R = B.rock.map(h => pack(h));
       const eff = variant >> 1, used = variant & 1;
@@ -611,6 +631,11 @@ G.Tiles = (() => {
 
     /** Cofre grande con candado. */
     bigchest() {
+      if (G.Settings.get('skin') !== 'classic' && G.ArtPS) {
+        return G.ArtPS.sprite(['.11111111111.', '1222222222221', '1233333333321', '1444444444441', '1222255522221',
+          '1222256522221', '1222255522221', '1222222222221', '1444444444441', '1111111111111'],
+          { 1: '#382010', 2: '#a06030', 3: '#c88848', 4: '#f8c830', 5: '#e0e0e8', 6: '#383848' }, 2, '#181818');
+      }
       const P = Pix(24, 20);
       const wood = pack('#6b3a1e'), woodL = pack('#8e5329'), woodD = pack('#432210');
       const iron = pack('#9aa6b5'), ironD = pack('#5d6773'), gold = pack('#f2c443'), goldD = pack('#b5832a');

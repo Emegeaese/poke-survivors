@@ -90,5 +90,19 @@ G.ArtPS = (() => {
     cache.set(name, cv);
     return cv;
   }
-  return { get, mk };
+  /** Dibujo con contorno, sin rellenar a cuadrado y ampliado `k` veces (para objetos del mapa). */
+  function sprite(rows, pal, k = 1, edge = '#181818') {
+    const w = Math.max(...rows.map(r => r.length)), h = rows.length;
+    const sil = document.createElement('canvas'); sil.width = w; sil.height = h;
+    const sc = sil.getContext('2d');
+    rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const c = pal[row[x]]; if (c) { sc.fillStyle = c; sc.fillRect(x, y, 1, 1); } } });
+    const dark = document.createElement('canvas'); dark.width = w; dark.height = h;
+    const dc = dark.getContext('2d'); dc.drawImage(sil, 0, 0); dc.globalCompositeOperation = 'source-in'; dc.fillStyle = edge; dc.fillRect(0, 0, w, h);
+    const out = document.createElement('canvas'); out.width = (w + 2) * k; out.height = (h + 2) * k;
+    const o = out.getContext('2d'); o.imageSmoothingEnabled = false;
+    for (const [dx, dy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) o.drawImage(dark, dx * k, dy * k, w * k, h * k);
+    o.drawImage(sil, k, k, w * k, h * k);
+    return out;
+  }
+  return { get, mk, sprite };
 })();
