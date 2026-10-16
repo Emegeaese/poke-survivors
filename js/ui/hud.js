@@ -113,7 +113,7 @@ G.HUD = (() => {
     // ---------- shinies fuera de pantalla: destello en el borde ----------
     const cam = G.Camera, pulse = 0.6 + Math.sin(performance.now() / 160) * 0.4;
     for (const e of G.EnemyMgr.shinies()) {
-      const sx = (e.x - cam.left()) * cam.scale, sy = (e.y - cam.top()) * cam.scale;
+      const [sx, sy] = cam.toScreen(e.x, e.y);
       if (sx > 0 && sx < w && sy > 0 && sy < h) continue;
       const M = 34;
       const ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 60, h - M - 70);
@@ -151,7 +151,7 @@ G.HUD = (() => {
     // flecha que bota encima; en la arena, cuenta atrás.
     const rift = G.Rift.rift;
     if (rift) {
-      const sx = (rift.x - cam.left()) * cam.scale, sy = (rift.y - 40 - cam.top()) * cam.scale;
+      const [sx, sy] = cam.toScreen(rift.x, rift.y - 40);
       const now = performance.now() / 1000, beat = 0.5 + Math.sin(now * 7) * 0.5;
       const label = 'GRIETA · ' + Math.round(G.U.dist(pl.x, pl.y, rift.x, rift.y) / 32) + ' m · ' + Math.ceil(rift.ttl) + ' s';
       const off = sx < 0 || sx > w || sy < 0 || sy > h;
@@ -422,7 +422,7 @@ G.HUD = (() => {
     for (const m of G.Coop.mates) {
       if (!m.connected) continue;
       const o = m.pl;
-      const sx = (o.x - cam.left()) * cam.scale, sy = (o.y - o.bodyH * 0.5 - cam.top()) * cam.scale;
+      const [sx, sy] = cam.toScreen(o.x, o.y - o.bodyH * 0.5);
       if (sx > 0 && sx < w && sy > 0 && sy < h) continue;
       const M = 42;
       const ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 70, h - M - 80);

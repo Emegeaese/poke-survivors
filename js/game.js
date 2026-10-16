@@ -63,7 +63,7 @@ G.Game = (() => {
       iw = Math.ceil(pw / Sd); ih = Math.ceil(ph / Sd);
       ox = -Math.floor((iw * Sd - pw) / 2); oy = -Math.floor((ih * Sd - ph) / 2);
       wcv.width = iw; wcv.height = ih;
-      G.Camera.resizePx(iw, ih);
+      G.Camera.resizePx(iw, ih, Sd / dpr, ox / dpr, oy / dpr);
     } else G.Camera.resize(w, h, dpr);
     checkOrientation();
   }

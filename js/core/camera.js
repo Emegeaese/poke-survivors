@@ -5,6 +5,7 @@
 G.Camera = {
   x: 0, y: 0,
   scale: 1,
+  k: 1, ox: 0, oy: 0,    // para llevar el mundo a la pantalla (px CSS por unidad, y desfase): ver toScreen()
   VIEW_W: 768,              // un 20% más de vista que al principio (640)
   shake: 0,
   _sx: 0, _sy: 0,
@@ -21,6 +22,7 @@ G.Camera = {
     this.scale = Math.min(cssW / this.VIEW_W, cssH / this.MIN_VIEW_H);
     this.w = cssW / this.scale;
     this.h = cssH / this.scale;
+    this.k = this.scale; this.ox = 0; this.oy = 0;
   },
 
   /**
@@ -28,11 +30,17 @@ G.Camera = {
    * píxeles (1 unidad de mundo = 1 píxel) que luego se amplía a un múltiplo
    * entero. Así todos los píxeles de arte miden lo mismo.
    */
-  resizePx(iw, ih) {
+  resizePx(iw, ih, k, ox, oy) {
     this.dpr = 1;
     this.scale = 1;
     this.w = iw;
     this.h = ih;
+    this.k = k; this.ox = ox; this.oy = oy;
+  },
+
+  /** Posición en pantalla (px CSS) de un punto del mundo. */
+  toScreen(wx, wy) {
+    return [(wx - this.left()) * this.k + this.ox, (wy - this.top()) * this.k + this.oy];
   },
 
   follow(tx, ty, dt) {

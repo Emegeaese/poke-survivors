@@ -628,7 +628,7 @@ G.Judgment = (() => {
     ctx.fillText(txt, w / 2, boss ? 98 : 76);
     // Flecha hacia Arceus si no se ve.
     const cam = G.Camera;
-    const sx = (A.x - cam.left()) * cam.scale, sy = (A.y - A.bodyH * 0.5 - cam.top()) * cam.scale;
+    const [sx, sy] = cam.toScreen(A.x, A.y - A.bodyH * 0.5);
     if (sx < 0 || sx > w || sy < 0 || sy > h) {
       const M = 46, ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 70, h - M - 80);
       const an = Math.atan2(sy - ey, sx - ex);

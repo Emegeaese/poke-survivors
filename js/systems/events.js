@@ -322,7 +322,7 @@ G.Events = (() => {
   }
 
   function edgeArrow(ctx, w, h, cam, x, y, col, label, F) {
-    const sx = (x - cam.left()) * cam.scale, sy = (y - cam.top()) * cam.scale;
+    const [sx, sy] = cam.toScreen(x, y);
     if (sx > 0 && sx < w && sy > 0 && sy < h) return;
     const M = 44, ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 70, h - M - 80);
     const a = Math.atan2(sy - ey, sx - ex), ca = Math.cos(a), sa = Math.sin(a);
