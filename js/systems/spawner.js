@@ -108,6 +108,7 @@ G.Spawner = (() => {
     say('¡' + e.name + (e.shiny ? ' shiny' : '') + ' salvaje apareció!', 3.2);
     G.Camera.kick(1.1);
     G.Audio.sfx('boss');
+    setTimeout(() => G.Audio.cry(e.dex, { vol: 0.8, force: true }), 200);
     return e;
   }
 

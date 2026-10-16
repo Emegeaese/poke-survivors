@@ -39,6 +39,7 @@ G.Weather = (() => {
   let cur = null;           // { kind, t, dur }
   let checkT = CHECK, chipT = 0;
   let parts = [];
+  let flicker = 0, bolt = 6, flash = 0;
   const authority = () => !G.Coop.active || G.Coop.isHost;
 
   function reset() { cur = null; checkT = CHECK; chipT = 0; parts = []; }
@@ -138,10 +139,34 @@ G.Weather = (() => {
     const k = level();
     if (!d || k <= 0) { parts.length = 0; return; }
     const [r, g, b, a] = d.tint;
-    ctx.fillStyle = `rgba(${r},${g},${b},${a * k})`;
+    ctx.fillStyle = `rgba(${r},${g},${b},${a * 1.7 * k})`;
     ctx.fillRect(0, 0, w, h);
+    flicker += dt;
+    if (cur.kind === 'sun') {
+      // Resplandor cálido desde una esquina, con un pulso lento.
+      const R = Math.max(w, h) * (0.85 + 0.05 * Math.sin(flicker * 0.8));
+      const gr = ctx.createRadialGradient(w * 0.9, -h * 0.1, 0, w * 0.9, -h * 0.1, R);
+      gr.addColorStop(0, `rgba(255,236,150,${0.38 * k})`);
+      gr.addColorStop(0.5, `rgba(255,205,100,${0.12 * k})`);
+      gr.addColorStop(1, 'rgba(255,200,90,0)');
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, w, h);
+    } else if (cur.kind === 'rain') {
+      // Relámpagos de vez en cuando.
+      bolt -= dt;
+      if (bolt <= 0) bolt = G.U.rand(5, 12), flash = 0.35;
+      if (flash > 0) { ctx.fillStyle = `rgba(255,255,255,${flash * k})`; ctx.fillRect(0, 0, w, h); flash = Math.max(0, flash - dt * 1.6); }
+    } else if (cur.kind === 'fog' || cur.kind === 'sand') {
+      // Bandas de bruma que pasan despacio.
+      const c = cur.kind === 'fog' ? '215,220,232' : '225,195,130';
+      for (let i = 0; i < 4; i++) {
+        const bw = w * 0.9, x = ((flicker * (14 + i * 9) * (cur.kind === 'sand' ? 6 : 1) + i * w * 0.37) % (w + bw)) - bw;
+        const gr = ctx.createLinearGradient(x, 0, x + bw, 0);
+        gr.addColorStop(0, `rgba(${c},0)`); gr.addColorStop(0.5, `rgba(${c},${0.13 * k})`); gr.addColorStop(1, `rgba(${c},0)`);
+        ctx.fillStyle = gr; ctx.fillRect(x, h * (0.1 + i * 0.22), bw, h * 0.3);
+      }
+    }
 
-    const want = { rain: 70, snow: 45, sand: 40, sun: 14, fog: 0 }[cur.kind] * k * (w / 1280);
+    const want = { rain: 150, snow: 95, sand: 85, sun: 26, fog: 0 }[cur.kind] * k * (w / 1280);
     while (parts.length < want) parts.push(spawn(w, h, true));
     if (parts.length > want + 4) parts.length = Math.ceil(want);
     const s = Math.max(2, Math.round(w / 640));          // un "píxel" del juego

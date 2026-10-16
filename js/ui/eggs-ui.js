@@ -146,6 +146,7 @@ G.EggsUI = (() => {
     card.insertAdjacentHTML('beforeend', `<b>${res.shiny ? G.Icons.html('shiny', 12) + ' ' : ''}${esc(mon.name)}</b><div class="tag">${tag}</div>`);
     card.classList.remove('hidden');
     G.Audio.sfx('reveal', { rarity: res.rarity });
+    setTimeout(() => G.Audio.cry(res.dex, { force: true }), 250);
     $('egg-ok').classList.remove('hidden');
     G.UI.refreshCoins();
   }

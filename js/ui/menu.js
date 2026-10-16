@@ -335,6 +335,7 @@ G.MenuUI = (() => {
       s.partner = dex;
       s.partnerShiny = hasSh && viewShiny;
       G.DB.commit();
+      G.Audio.cry(dex, { force: true });
       G.UI.toast(p.name + (s.partnerShiny ? ' shiny' : '') + ' es ahora tu compañero');
       renderGrid(); showDetail(dex);
     };

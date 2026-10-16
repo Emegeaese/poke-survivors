@@ -43,6 +43,26 @@ G.FX = (() => {
     }
   }
 
+  /**
+   * Destello de impacto: una cruz de píxeles blancos con el color del tipo, y si el golpe es
+   * muy eficaz o crítico, anillo y más chispas. `eff`: 'super' | 'crit' | 'weak' | null.
+   */
+  function impact(x, y, color, eff) {
+    const big = eff === 'super' || eff === 'crit';
+    const reach = big ? 4 : eff === 'weak' ? 2 : 3;
+    for (let i = 1; i <= reach; i++) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        px(x + dx * i * PX * 1.5, y + dy * i * PX * 1.5, i === 1 ? '#ffffff' : color,
+           { vx: dx * 40, vy: dy * 40, life: 0.14 + 0.03 * i, size: i === 1 ? 2 : 1, drag: 0.8 });
+      }
+    }
+    px(x, y, '#ffffff', { life: 0.12, size: 3, drag: 0 });
+    if (big) {
+      ring(x, y, 4, eff === 'crit' ? 38 : 30, eff === 'crit' ? '#ff9a3c' : '#ffe14d', 0.25, 3);
+      burst(x, y, color, 8, 150);
+    }
+  }
+
   /** Sprite de efecto suelto. o: { vx, vy, life, scale, angle, spin, grav, frameRate, fade } */
   function sp(shape, pal, x, y, o = {}) {
     if (sprites.length >= CAP_SPRITES[q()]) return;
@@ -291,6 +311,6 @@ G.FX = (() => {
     ctx.fillStyle = b; ctx.fillRect(x, yy + top, fw, h - top);
   }
 
-  return { hpBar, clear, px, burst, spark, sp, twinkle, trail, dmgText, ring, slash, beam, update, draw,
+  return { hpBar, clear, impact, px, burst, spark, sp, twinkle, trail, dmgText, ring, slash, beam, update, draw,
            get count() { return parts.length + sprites.length + texts.length; } };
 })();

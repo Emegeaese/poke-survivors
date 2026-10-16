@@ -23,6 +23,18 @@ G.Game = (() => {
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
+  // Cambio de mapa: la imagen del bioma anterior se desvanece sobre el nuevo.
+  let dissolve = null, dissolveT = 0;
+  const DISSOLVE = 1.6;
+  function startDissolve() {
+    try {
+      if (!cv || !cv.width) return;
+      const c = document.createElement('canvas');
+      c.width = cv.width; c.height = cv.height;
+      c.getContext('2d').drawImage(cv, 0, 0);
+      dissolve = c; dissolveT = DISSOLVE;
+    } catch (e) { dissolve = null; }
+  }
 
   const st = { get time() { return time; } };
 
@@ -191,6 +203,7 @@ G.Game = (() => {
     // Para el ranking: el servidor apunta cuándo empieza la partida (anti-trampas).
     if (!coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's');
     deathT = 0; eggLast = null; G.Eggs.startRun();
+    setTimeout(() => G.Audio.cry(mon.dex, { force: true }), 400);
 
     state = 'playing';
   }
@@ -320,6 +333,7 @@ G.Game = (() => {
     else pl.coins += 150;
     G.Spawner.say(isNew ? '¡' + name + ' se une a tu equipo!' : '¡' + name + ' te da las gracias! (+150 monedas, ya lo tenías)', 4);
     G.Audio.sfx('shinyGet');
+    G.Audio.cry(dex, { force: true });
   };
 
   /** Un shiny salvaje cae: te lo quedas (y la versión normal si no la tenías). */
@@ -738,6 +752,7 @@ G.Game = (() => {
     const b = Math.floor(time / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
       biome = b;
+      startDissolve();
       G.World.setBiome(b);
       G.Audio.sfx('biome');
       G.Spawner.say('— ' + G.World.biomeName() + ' —', 3);
@@ -840,6 +855,17 @@ G.Game = (() => {
       G.Judgment.drawAir(ctx);
     });
 
+    if (dissolve) {
+      dissolveT -= frameDt;
+      if (dissolveT <= 0) dissolve = null;
+      else {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = Math.min(1, dissolveT / DISSOLVE);
+        ctx.drawImage(dissolve, 0, 0);
+        ctx.restore();
+      }
+    }
     G.Weather.draw(ctx, w, h, frameDt);
     G.World.drawVignette(ctx, w, h);
     // Niebla: la viñeta se cierra un poco (sin tapar el centro).

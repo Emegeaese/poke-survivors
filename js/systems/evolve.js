@@ -34,6 +34,7 @@ G.Evo = (() => {
       pl.evoCount = (pl.evoCount || 0) + 1;
       G.Spawner.say('¡' + from + ' evoluciona a ' + pl.mon.name + '!', 3.6, true);
       G.Audio.sfx('levelup');
+      G.Audio.cry(to, { vol: 0.8, force: true });
       if (G.Coop.active) G.Coop.evolved(pl, to, shiny);
     });
   }

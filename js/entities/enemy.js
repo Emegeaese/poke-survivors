@@ -134,6 +134,9 @@
       G.FX.dmgText(this.x, this.y - this.bodyH - 4, d, eff === 'crit' ? '#ff9a3c' : eff === 'super' ? '#ffe14d' : eff === 'weak' ? '#a3abb8' : color,
                    this.boss || eff === 'super' || eff === 'crit');
       G.FX.spark(this.x, this.y - this.bodyH * 0.5, color, dirX, dirY, 3);
+      G.FX.impact(this.x, this.y - this.bodyH * 0.5, color, eff);
+      this.shake = this.boss ? 0.08 : 0.14;     // sacudida al recibir el golpe
+      this.shakeDir = Math.atan2(dirY, dirX);
       if (!this.anim.busy() && this.phase !== 'dash') this.anim.play('Hurt');
       G.Audio.sfx('hit');
     }
@@ -206,6 +209,7 @@
     netUpdate(dt) {
       this.anim.update(dt);
       if (this.flash > 0) this.flash -= dt;
+      if (this.shake > 0) this.shake -= dt;
       if (this.dead) { this.fade -= dt; return; }
       if (this.touchCd > 0) this.touchCd -= dt;
       this.bob += dt * 6;
@@ -239,6 +243,7 @@
       const seen = G.Camera.sees(this.x, this.y, 120);
       if (seen || this.dead) this.anim.update(dt);
       if (this.flash > 0) this.flash -= dt;
+      if (this.shake > 0) this.shake -= dt;
       if (this.dead) { this.fade -= dt; return; }
       if (this.shiny && seen) {
         this.sparkT -= dt;
@@ -693,7 +698,12 @@
       // Los que flotan ya van en el aire en su sprite: sólo se mecen un poco.
       // (Y los que saltan, en arco.)
       const lift = (this.flying && !this.boss ? 1 + Math.sin(this.bob) * 1.5 : 0) + (this.jumpLift || 0);
-      this.anim.draw(ctx, this.x, this.y - lift, { flash: this.flash > 0, alpha });
+      let sx = 0, sy = 0;
+      if (this.shake > 0 && !this.dead) {
+        const k = this.shake / (this.boss ? 0.08 : 0.14), a = this.shakeDir || 0, m = (this.boss ? 1 : 2.5) * k;
+        sx = Math.round(Math.cos(a) * m + (Math.random() - 0.5) * m); sy = Math.round(Math.sin(a) * m * 0.5);
+      }
+      this.anim.draw(ctx, this.x + sx, this.y - lift + sy, { flash: this.flash > 0, alpha });
       ctx.restore();
 
       if (this.dead) return;

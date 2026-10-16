@@ -114,6 +114,7 @@ G.GachaUI = (() => {
       c.insertAdjacentHTML('beforeend', `<b>${r.shiny ? G.Icons.html('shiny', 12) + ' ' : ''}${mon.name}</b><div class="tag">${tag}</div>`);
       out.appendChild(c);
       G.Audio.sfx('reveal', { rarity: r.rarity });
+      if (r.rarity >= 3 || r.isNew || r.shiny) setTimeout(() => G.Audio.cry(r.dex, { force: true }), 250);
       await wait(n === 10 ? 150 : 0);
     }
     $('pull-close').classList.remove('hidden');

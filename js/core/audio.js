@@ -500,8 +500,39 @@ G.Audio = (() => {
     return d.stream;
   }
 
+  // ---------------- gritos de cada Pokémon ----------------
+  // Los de PokeAPI/cries (pública): se bajan la primera vez que suenan y se guardan en el navegador.
+  // Sin conexión simplemente no suenan.
+  const CRY_URL = d => 'https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/' + d + '.ogg';
+  const cryCache = new Map();
+  let cryLast = 0, cryLive = 0;
+  /** opts: { vol: 0-1 (def. 0,6), force: ignora el espacio mínimo entre gritos } */
+  function cry(dex, opts = {}) {
+    if (!dex || settings.muted || settings.sfx <= 0) return;
+    const now = performance.now();
+    if (!opts.force && now - cryLast < 250) return;
+    if (cryLive >= 3) return;
+    let a = cryCache.get(dex);
+    if (a === false) return;
+    if (!a) {
+      a = new Audio(CRY_URL(dex));
+      a.preload = 'auto';
+      a.onerror = () => cryCache.set(dex, false);
+      cryCache.set(dex, a);
+    }
+    try {
+      const c = a.cloneNode();
+      c.volume = Math.min(1, settings.sfx * (opts.vol || 0.6));
+      cryLast = now; cryLive++;
+      const done = () => { cryLive = Math.max(0, cryLive - 1); };
+      c.onended = done; c.onerror = done;
+      const pr = c.play();
+      if (pr && pr.catch) pr.catch(done);
+    } catch (e) { cryLive = Math.max(0, cryLive - 1); }
+  }
+
   return {
-    music, sfx, setVolume, toggleMute, unlock, debugMeter, debugStream,
+    music, sfx, cry, setVolume, toggleMute, unlock, debugMeter, debugStream,
     /** ¿Ya puede sonar? (el navegador sólo deja tras tocar algo, salvo excepciones) */
     canPlay() { return !!ctx && ctx.state === 'running'; },
     get settings() { return settings; },

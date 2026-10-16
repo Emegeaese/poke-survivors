@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Gritos de cada Pokémon (al elegirlo, al empezar, al evolucionar, jefes, gacha y huevos; se bajan de PokeAPI y usan el volumen de Efectos). Golpes con destello de impacto, sacudida del enemigo y animación de daño; cambio de mapa con fundido suave; clima más visible (sol con resplandor, lluvia con relámpagos, bruma y arena en movimiento).",
+     "Pokémon cries (on pick, run start, evolution, bosses, gacha and eggs; fetched from PokeAPI, use the Effects volume). Impact flashes, enemy shake and hurt animation; smooth map-change fade; more visible weather (glowing sun, rain with lightning, drifting fog and sand)."],
     ["Objetos de tipo (Carbón, Agua Mística, Semilla Milagro, Pañuelo Seda...): +10% de daño por nivel a los movimientos de ese tipo. Un movimiento al nivel máximo evoluciona si llevas el objeto de su tipo (en Poderes acumulados). El retrato de la tarjeta de combate ya no se mueve.",
      "Type items (Charcoal, Mystic Water, Miracle Seed, Silk Scarf...): +10% damage per level to moves of that type. A max-level move evolves if you carry its type item (Stacked powers). The battle card portrait no longer animates."],
     ["Tu Pokémon evoluciona durante la partida: 1.ª evolución al nivel 10, 2.ª al 24 y 3.ª al 40. Toma los stats del nuevo Pokémon, se cura un poco y en cooperativo tus amigos te ven cambiar.",
