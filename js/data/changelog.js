@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Poderes acumulados (como en Pokémon Survivors): todos tus poderes atacan a la vez (hasta 6) y los objetos tienen nivel (hasta 6, nivel 1-5). Salen en las cartas de subir de nivel: uno nuevo o +1 nivel; los de cofres y jefes se suman solos. Tus poderes y objetos se ven arriba a la izquierda. Con más poderes, cada uno pega algo menos para mantener el equilibrio. El premio del legendario de la grieta pasa a ser una subida de nivel extra. Se puede volver al modo clásico en Ajustes > Poderes.",
+     "Stacked powers (like in Pokémon Survivors): all your powers attack at once (up to 6) and items have levels (up to 6, level 1-5). They show up in the level-up cards: a new one or +1 level; chest and boss items are added automatically. Your powers and items show at the top left. With more powers, each hits slightly less to keep the balance. The rift legendary reward becomes an extra level-up. You can go back to classic mode in Settings > Powers."],
     ["Impulso (barra espaciadora): un dash corto con invulnerabilidad, una estela que daña y una explosión al final. Se recarga en 8 s (menos con Reflejos, mínimo 4 s) y su recarga sale junto a tus poderes. En móvil, toca su botón.",
      "Dash (space bar): a short dash with invulnerability, a damaging trail and an explosion at the end. It recharges in 8 s (less with Reflexes, minimum 4 s) and its cooldown shows next to your powers. On mobile, tap its button."],
     ["Fondos de color del tipo detrás de cada Pokémon (menú, colección, gacha y huevos), gemas de experiencia pixel art de 4 tamaños que dan un saltito antes de volar hacia ti.",

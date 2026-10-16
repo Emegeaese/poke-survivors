@@ -63,6 +63,38 @@ G.HUD = (() => {
       ctx.fillRect(x + 1, y + 1, Math.max(1, Math.round((w - 2) * f)), 1);
     }
   }
+  /**
+   * Poderes acumulados: arriba a la izquierda, tus 6 movimientos (todos atacan a la vez, con su
+   * nivel y su recarga) y debajo tus 6 objetos con nivel, como en Pokémon Survivors.
+   */
+  function drawLoadout(ctx, pl, x0, y0) {
+    const S = 34, GAP = 4, SI = 30;
+    const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul), 0, 1);
+    ctx.textAlign = 'right';
+    for (let i = 0; i < pl.maxMoves; i++) {
+      const m = pl.moves[i], x = x0 + i * (S + GAP), y = y0;
+      const col = m ? G.U.TYPE_COLOR[m.type] : '#2a3050';
+      pxBox(ctx, x, y, S, S, '#10172b', m ? (m.evolved ? '#ffd23f' : col) : '#2a3050');
+      if (!m) continue;
+      G.Icons.draw(ctx, 'move:' + m.id, x + (S - 26) / 2, y + (S - 26) / 2 - 1, 26);
+      const f = cdOf(m);
+      if (f > 0) { ctx.fillStyle = 'rgba(8,8,20,.55)'; ctx.fillRect(x + 2, y + 2, S - 4, Math.round((S - 4) * f)); }
+      const fl = 1 - (performance.now() - (m.castAt || 0)) / 140;
+      if (fl > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (fl * 0.5).toFixed(2) + ')'; ctx.fillRect(x + 2, y + 2, S - 4, S - 4); }
+      ctx.font = PS(7); ctx.fillStyle = m.evolved ? '#ffd23f' : '#f8f8f8';
+      otext(ctx, m.evolved ? 'E' : String(m.lvl), x + S - 3, y + S - 3);
+    }
+    const ids = Object.keys(pl.items);
+    for (let i = 0; i < G.Items.MAX_ITEMS; i++) {
+      const id = ids[i], x = x0 + i * (SI + GAP), y = y0 + S + 5;
+      pxBox(ctx, x, y, SI, SI, id ? '#2c220d' : '#10172b', id ? '#ffd23f' : '#2a3050');
+      if (!id) continue;
+      G.Icons.draw(ctx, id, x + (SI - 24) / 2, y + (SI - 24) / 2 - 1, 24);
+      ctx.font = PS(7);
+      otext(ctx, String(pl.items[id]), x + SI - 3, y + SI - 3);
+    }
+  }
+
   // Retrato de tu Pokémon (animación Idle a 1 píxel de arte = 1 px de pantalla).
   let hudAnim = null, hudAnimKey = '', hudAnimT = 0;
   function portrait(ctx, pl, x, y, w, h) {
@@ -162,6 +194,9 @@ G.HUD = (() => {
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
     }
+
+    // ---------- poderes y objetos acumulados (arriba a la izquierda) ----------
+    if (pl.stack) drawLoadout(ctx, pl, 10, (gba ? 20 : 14));
 
     // ---------- vida + nivel ----------
     // Ordenador: caja de combate abajo a la izquierda. Móvil: arriba, como antes.
@@ -292,7 +327,7 @@ G.HUD = (() => {
       bx += tw + 5;
     }
 
-    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, touch ? py + (bx > px ? 56 : 40) : 18);
+    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, pl.stack ? 100 : touch ? py + (bx > px ? 56 : 40) : 18);
 
     // Grieta: flecha grande que late en el borde si no se ve, y si se ve, una
     // flecha que bota encima; en la arena, cuenta atrás.
@@ -389,8 +424,8 @@ G.HUD = (() => {
 
     // ---------- ranura de movimientos ----------
     const S = 54, GAP = 9;
-    const n = Math.max(1, pl.slots.length);
-    const totalW = n * S + (n - 1) * GAP;
+    const n = pl.stack ? 0 : Math.max(1, pl.slots.length);     // acumulados: los poderes van arriba a la izquierda
+    const totalW = n ? n * S + (n - 1) * GAP : 0;
     let sx = (w - totalW) / 2;
     // Por encima de la barra de inicio del iPhone (allí los toques a veces no llegan).
     let sy = h - S - 18 - (touch ? Math.min(28, G.Touch.safeArea().bottom) : 0);
@@ -488,7 +523,7 @@ G.HUD = (() => {
     }
 
     // ---------- objeto equipado (a la izquierda de los movimientos) ----------
-    {
+    if (!pl.stack) {
       const ix = sx - S - 18, iy = sy;
       pxBox(ctx, ix, iy, S, S, pl.item ? '#2c220d' : '#10172b', pl.item ? '#ffd23f' : '#3a4670');
       if (pl.item) {
@@ -541,7 +576,9 @@ G.HUD = (() => {
       ctx.font = F(600, 10);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
-      ctx.fillText(touch ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo'
+      ctx.fillText(pl.stack ? (touch ? 'Arrastra el dedo para moverte  ·  toca DASH para impulsarte'
+                                       : 'WASD moverse  ·  Espacio: impulso  ·  tus poderes atacan solos  ·  Esc pausa')
+                  : touch ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo'
                          : 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Esc pausa', w / 2, h - 4);
     }
 

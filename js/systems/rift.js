@@ -196,9 +196,10 @@ G.Rift = (() => {
     G.Audio.sfx('legend');
     const pl = G.Game.player;
     if (pl) {
-      pl.bonds++;
+      // Acumulados: el premio es una subida de nivel extra; clásico: un vínculo.
+      if (pl.stack) G.Game.addLevel(); else pl.bonds++;
       G.Eggs.roll('rift');
-      G.FX.dmgText(pl.x, pl.y - pl.bodyH - 10, '¡Vínculo!', '#ff8ad8', true);
+      G.FX.dmgText(pl.x, pl.y - pl.bodyH - 10, pl.stack ? '¡Nivel extra!' : '¡Vínculo!', '#ff8ad8', true);
       G.FX.ring(pl.x, pl.y, 8, 90, '#ff8ad8', 0.7, 5);
     }
   }

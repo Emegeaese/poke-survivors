@@ -489,9 +489,33 @@ G.Game = (() => {
     if (laterItems.length) offerItem(laterItems.shift());
   }
 
+  /**
+   * Poderes acumulados: un objeto de un cofre o un jefe se suma sin preguntar. Si ya lo
+   * tienes sube de nivel; si no cabe (6 distintos) o está al máximo, sube de nivel otro
+   * que tengas, y si no queda ninguno, monedas.
+   */
+  function takeItem(id) {
+    const name = G.Items.BY[id].name;
+    let L = pl.addItem(id), shown = id;
+    if (!L) {
+      const up = Object.keys(pl.items).filter(k => pl.items[k] < G.Items.MAX_LEVEL);
+      if (up.length) { shown = G.U.pick(up); L = pl.addItem(shown); }
+    }
+    if (L) {
+      G.Spawner.say(L === 1 ? '¡Objeto nuevo: ' + G.Items.BY[shown].name + '!' : G.Items.BY[shown].name + ' sube a nivel ' + L, 2.8, true);
+      G.Progress.event('item', { id: shown });
+      G.FX.ring(pl.x, pl.y, 8, 70, '#ffd23f', 0.5, 4);
+      G.Audio.sfx('legend');
+    } else {
+      pl.coins += 150;
+      G.Spawner.say(name + ': ya lo tienes todo al máximo (+150 monedas)', 2.8, true);
+    }
+  }
+
   /** Has cogido un objeto: si no llevas ninguno te lo pones; si no, eliges. */
   function offerItem(id) {
     if (!pl || !G.Items.BY[id]) return;
+    if (pl.stack) { takeItem(id); return; }
     if (state === 'levelup' || G.UI.isOpen('scr-levelup')) { laterItems.push(id); return; }
     let mine = false;            // esta elección es la que ha parado el juego
     const take = got => {
@@ -937,6 +961,8 @@ G.Game = (() => {
 
   return {
     init, startRun, everyone, levelXp, flash, offerBond,
+    /** Una subida de nivel extra (poderes acumulados: premio del legendario de la grieta). */
+    addLevel() { pendingLevels++; },
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */

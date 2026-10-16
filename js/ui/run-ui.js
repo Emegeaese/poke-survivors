@@ -204,6 +204,10 @@ G.RunUI = (() => {
   }
 
   function showPause(coop = false) {
+    const pl = G.Game.player;
+    $('pause-keys').innerHTML = pl && pl.stack
+      ? '<kbd>WASD</kbd> moverse · <kbd>Espacio</kbd> impulso · tus poderes atacan solos · <kbd>Esc</kbd> pausa'
+      : '<kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>Esc</kbd> pausa';
     G.UI.soundControls($('pause-sound'));
     $('pause-coop').classList.toggle('hidden', !coop);
     $('btn-quit').textContent = coop ? 'Salir de la partida' : 'Abandonar run';

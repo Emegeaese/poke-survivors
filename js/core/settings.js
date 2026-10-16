@@ -3,6 +3,7 @@
  * suyos. El volumen lo guarda audio.js aparte.
  *
  *   quality     'auto' | 'high' | 'mid' | 'low'   efectos y partículas
+ *   powers      'stack' | 'classic'               poderes acumulados (todos atacan a la vez, objetos con nivel) o clásico
  *   skin        'gba' | 'classic'                 estilo de la interfaz (css/gba.css)
  *   zoom        'near' | 'far'                    cámara cerca (sprites grandes) o lejos (el doble de mapa, como Pokémon Survivors)
  *   pixel       'auto' | 'on' | 'off'             píxel perfecto (auto: sí en PC, no en móvil)
@@ -19,7 +20,7 @@
  */
 G.Settings = (() => {
   const KEY = 'ps.settings';
-  const DEF = { quality: 'auto', skin: 'gba', pixel: 'auto', zoom: 'near', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null };
+  const DEF = { quality: 'auto', powers: 'stack', skin: 'gba', pixel: 'auto', zoom: 'near', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null };
   let s = Object.assign({}, DEF);
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* nada */ }
   const fns = new Set();

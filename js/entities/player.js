@@ -34,7 +34,12 @@ G.Player = class Player {
     this.moves = [];           // todos los movimientos aprendidos
     this.slots = [];           // huecos: cada uno, una lista de movimientos que se lanzan a la vez
     this.active = 0;           // hueco activo
-    this.maxMoves = 4;         // huecos
+    // Poderes acumulados (Ajustes > Poderes): todos los movimientos atacan a la vez (hasta 6) y los
+    // objetos tienen nivel (hasta 6). Clásico: 4 huecos, ataca el activo, un objeto por run.
+    this.stack = G.Settings.get('powers') !== 'classic';
+    this.maxMoves = this.stack ? 6 : 4;         // huecos
+    this.items = {};           // objetos: id -> nivel (1-5)
+    this._itemFx = null;       // lo que dan ahora los objetos (para deshacerlo al cambiar)
     this.bonds = 0;            // vínculos por usar (premio de los legendarios)
 
     this.buffs = {
@@ -91,7 +96,9 @@ G.Player = class Player {
   cy() { return this.y; }
 
   // ---------------- stats efectivos ----------------
-  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount); }
+  get atk() { return this.baseAtk * this.atkMul * this.stackK * (1 + this.buffs.atk.n * this.buffs.atk.amount); }
+  /** Con poderes acumulados, cada uno pega algo menos cuantos más tienes (el total sube, pero no se dispara). */
+  get stackK() { return this.stack ? 1 / (1 + 0.35 * Math.max(0, this.moves.length - 1)) : 1; }
   get spd() {
     const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (this.slowT > 0 ? 0.5 : 1);
     const w = G.Weather.speedFor(this.mon.types);
@@ -141,8 +148,9 @@ G.Player = class Player {
   hasMove(id) { return this.moves.some(m => m.id === id); }
 
   setActive(i) {
+    if (this.stack) return;                  // acumulados: no hay hueco activo, atacan todos
     if (i < 0 || i >= this.slots.length || i === this.active) return;
-    // Cinta Elección: no se puede cambiar de movimiento.
+    // Cinta Elección (clásico): no se puede cambiar de movimiento.
     if (this.hasItem('choiceband') && this.slots[this.active]) {
       G.FX.dmgText(this.x, this.y - this.bodyH - 8, 'Cinta Elección', '#ff8ad8');
       return;
@@ -188,14 +196,14 @@ G.Player = class Player {
     this.arrange();
     // Se pasa al grupo, salvo con la Cinta Elección (sigues en el hueco que tenías, si queda).
     const a = this.slots.indexOf(cur);
-    this.active = this.hasItem('choiceband') && a >= 0 ? a : this.slots.indexOf(target);
+    this.active = !this.stack && this.hasItem('choiceband') && a >= 0 ? a : this.slots.indexOf(target);
     this.bonds = Math.max(0, this.bonds - 1);
     G.Projectiles.clearOrbs(this);
     return target;
   }
 
   /** Movimientos que se lanzan ahora (el grupo del hueco activo). */
-  activeGroup() { return this.slots[this.active] || []; }
+  activeGroup() { return this.stack ? this.moves : (this.slots[this.active] || []); }
 
   activeMove() { return this.activeGroup()[0]; }
 
@@ -250,7 +258,7 @@ G.Player = class Player {
     G.FX.dmgText(this.x, this.y - this.bodyH - 4, '-' + Math.round(d), eff === 'super' ? '#ff3048' : eff === 'weak' ? '#c9a0a8' : '#ff6b7a', eff === 'super');
     G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#ff5f6d', 6, 90);
     // Banda Focus: aguanta el golpe con 1 de vida (una vez cada 60 s).
-    if (this.hp <= 0 && this.hasItem('focussash') && performance.now() - this.sashT > 60000) {
+    if (this.hp <= 0 && this.hasItem('focussash') && performance.now() - this.sashT > G.Items.val('focussash', 'sec', this.itemLv('focussash')) * 1000) {
       this.sashT = performance.now();
       this.hp = 1; this.invuln = 1.2;
       G.FX.dmgText(this.x, this.y - this.bodyH - 16, '¡Banda Focus!', '#ff9a3d', true);
@@ -287,18 +295,52 @@ G.Player = class Player {
   }
 
   // ---------------- objeto equipado ----------------
-  hasItem(id) { return this.item === id; }
+  itemLv(id) { return this.items[id] || 0; }
+  hasItem(id) { return this.itemLv(id) > 0; }
+  get itemCount() { return Object.keys(this.items).length; }
 
-  /** Se pone un objeto (y se quita el que llevara). */
+  /** Recalcula lo que dan los objetos (deshace lo anterior y aplica lo de ahora). */
+  refreshItems() {
+    const o = this._itemFx;
+    if (o) {
+      this.atkMul /= o.atk; this.cdMul /= o.cd; this.spdMul /= o.spd; this.xpMul /= o.xp; this.coinMul /= o.coin;
+      this.dmgReduce -= o.def; this.regenFlat -= o.regen;
+    }
+    const f = { atk: 1, cd: 1, spd: 1, xp: 1, coin: 1, def: 0, regen: 0 };
+    for (const id in this.items) {
+      const x = G.Items.BY[id].fx(this.items[id]);
+      for (const k in x) { if (k === 'def' || k === 'regen') f[k] += x[k]; else f[k] *= x[k]; }
+    }
+    f.regen *= this.maxHp;
+    this.atkMul *= f.atk; this.cdMul *= f.cd; this.spdMul *= f.spd; this.xpMul *= f.xp; this.coinMul *= f.coin;
+    this.dmgReduce += f.def; this.regenFlat += f.regen;
+    this._itemFx = f;
+  }
+
+  /** Clásico: se pone un objeto (nivel 3) y se quita el que llevara. */
   equip(id) {
-    if (this.item) G.Items.BY[this.item].off(this);
     this.item = id;
-    if (id) G.Items.BY[id].on(this);
+    this.items = id ? { [id]: G.Items.CLASSIC_LEVEL } : {};
+    this.refreshItems();
+  }
+
+  /**
+   * Acumulados: un objeto nuevo (nivel 1) o +1 nivel. Devuelve el nivel que tiene
+   * ahora, o 0 si no cabe (ya tienes 6 y éste no es uno de ellos) o ya está al máximo.
+   */
+  addItem(id) {
+    const L = this.itemLv(id);
+    if (L >= G.Items.MAX_LEVEL) return 0;
+    if (!L && this.itemCount >= G.Items.MAX_ITEMS) return 0;
+    this.items[id] = L + 1;
+    this.refreshItems();
+    return L + 1;
   }
 
   /** Cascabel Concha: un poco de vida por el daño que haces (tope 4/s). */
   onDealt(dmg) {
-    if (this.item === 'shellbell') this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04);
+    const L = this.itemLv('shellbell');
+    if (L) this.bellHeal = Math.min(4, this.bellHeal + dmg * G.Items.val('shellbell', 'heal', L));
   }
 
   /** Poder de un altar (ver systems/interact.js): se aplica y se quita solo. */

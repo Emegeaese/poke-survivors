@@ -79,6 +79,8 @@ G.SettingsUI = (() => {
              `<button class="chip ${G.I18n.lang === v ? 'on' : ''}" data-lang="${v}">${l}</button>`).join('')}</div>`
         + section('Calidad', 'Cuántos efectos y partículas se dibujan. <b>Auto</b> la baja sola si el juego va a tirones (ahora: ' + auto + ').')
         + choice('quality', [['auto', 'Auto'], ['high', 'Alta'], ['mid', 'Media'], ['low', 'Baja']])
+        + section('Poderes', '<b>Acumulados</b>: todos tus poderes atacan a la vez (hasta 6) y los objetos tienen nivel (hasta 6), como en Pokémon Survivors. <b>Clásico</b>: 4 huecos, ataca el que elijas y llevas un objeto. Se aplica en la próxima partida.')
+        + choice('powers', [['stack', 'Acumulados'], ['classic', 'Clásico']])
         + section('Estilo de la interfaz', 'Menús al estilo Game Boy Advance (paneles claros y letra pixel) o el estilo clásico azul.')
         + choice('skin', [['gba', 'GBA'], ['classic', 'Clásico']])
         + section('Zoom de la cámara', 'Cerca: sprites grandes. Lejos: sprites a la mitad y el doble de mapa a la vista, como en Pokémon Survivors (salen más enemigos).')

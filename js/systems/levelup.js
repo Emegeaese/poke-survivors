@@ -50,6 +50,32 @@ G.LevelUp = (() => {
       }
     }
 
+    // --- objetos con nivel (poderes acumulados): uno nuevo, o +1 nivel a uno que ya tienes ---
+    if (pl.stack) {
+      const MAXL = G.Items.MAX_LEVEL;
+      if (pl.itemCount < G.Items.MAX_ITEMS) {
+        for (const it of G.U.pickN(G.Items.LIST.filter(i => !pl.items[i.id]), 3)) {
+          out.push({
+            w: 9, type: 'item', key: 'item:' + it.id,
+            icon: it.id, color: '#ffd23f', tag: 'Objeto · Nv.1',
+            title: it.name, desc: it.desc(1),
+            apply: p => p.addItem(it.id)
+          });
+        }
+      }
+      for (const id in pl.items) {
+        const L = pl.items[id];
+        if (L >= MAXL) continue;
+        const it = G.Items.BY[id];
+        out.push({
+          w: 10, type: 'itemup', key: 'itemup:' + id,
+          icon: id, color: '#ffd23f', tag: 'Nv.' + L + ' > ' + (L + 1),
+          title: it.name, desc: it.desc(L + 1),
+          apply: p => p.addItem(id)
+        });
+      }
+    }
+
     // --- evoluciones: movimiento al máximo + su condición cumplida ---
     const waiting = {};                   // stat -> movimiento que la espera para evolucionar
     for (const m of pl.moves) {
