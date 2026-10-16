@@ -14,6 +14,8 @@ G.CHANGELOG = [
     ["Números pixelados nuevos, hechos para que el 2 y el 5 no se confundan.",
      "New pixel-art digits, made so 2 and 5 are never mistaken."]
   ], fix: [
+    ["Jugar en dos aparatos (PC y móvil) ya no hace perder monedas ni tickets: se suma lo ganado en los dos, y al volver tras un rato se trae lo del otro aparato.",
+     "Playing on two devices (PC and phone) no longer loses coins or tickets: what you earn on both is added up, and when you come back after a while it brings in what the other device earned."],
     ["Cooperativo: un compañero que pierde la conexión ya no se queda \"vivo y quieto\" en tu pantalla ni frena el final de la partida.",
      "Co-op: a teammate who loses connection no longer stays \"alive and standing still\" on your screen or holds up the end of the run."],
     ["Cooperativo: un parpadeo de internet ya no te saca de la sala durante la partida.",
@@ -22,9 +24,6 @@ G.CHANGELOG = [
   { d: "2026-10-14", title: ["Botones del móvil y arreglos del cooperativo","Mobile buttons and co-op fixes"], new: [
     ["Móvil: ya puedes colocar los botones donde quieras. En Ajustes > Controles > Colocar los botones arrastras los ataques (con el objeto), la pausa y el joystick, que ahora también puede ser fijo en vez de aparecer donde pones el dedo.",
      "Mobile: you can now place the buttons wherever you want. In Settings > Controls > Place the buttons, drag the attacks (with the item), the pause button and the joystick, which can now also be fixed instead of appearing where you put your finger."]
-  ], chg: [
-    ["Las tablas de la semana y del mes del ranking empiezan de cero, como el histórico: ahora sólo cuentan partidas con la Sentencia de Arceus y todas las tablas cuadran entre sí.",
-     "The weekly and monthly leaderboards start from scratch, like the all-time one: now only runs with the Judgment of Arceus count, and all boards match each other."]
   ], fix: [
     ["Cooperativo: la partida ya no se queda parada con cada uno esperando a que el otro elija. Un objeto y las cartas de nivel ya no se tapan, y si la conexión pierde un aviso se arregla solo.",
      "Co-op: the game no longer freezes with each player waiting for the other to choose. An item and the level-up cards no longer cover each other, and if the connection drops a message it fixes itself."],
