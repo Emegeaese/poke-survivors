@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Colección con tarjetas: cada Pokémon muestra sus tipos y el panel \"Inspeccionar\" enseña estadísticas, el Impulso (Espacio) y todos los movimientos que puede aprender.",
+     "Collection cards: each Pokémon shows its types and the Inspect panel lists stats, the Dash (Space) and every move it can learn."],
     ["Las mejoras (Mejoras) ahora valen para todos tus Pokémon, juegues con el que juegues. Lo que tenías por Pokémon se junta: te quedas con el nivel más alto de cada mejora. El Veto también es para todos.",
      "Upgrades now apply to all your Pokémon, whichever you play with. What you had per Pokémon is merged: you keep the highest level of each upgrade. The Ban list is for everyone too."],
     ["Dificultad: Normal, Difícil y Pesadilla (en el menú, bajo tu compañero). Difícil: enemigos con 1,4× de vida, 1,45× de daño, 1,25× de cantidad y 1,1× de velocidad, +25% de monedas. Pesadilla: 1,8× de vida, 2× de daño, 1,5× de cantidad, 1,2× de velocidad, curas la mitad y +60% de monedas. En grupo manda la del anfitrión. Sólo la Normal sube al ranking.",

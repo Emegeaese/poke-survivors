@@ -236,7 +236,7 @@ G.MenuUI = (() => {
       else if (sh) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Tienes su shiny">${G.Icons.html('shiny', 12)}</span>`);
       const useShiny = sh && p.dex === s.partner && s.partnerShiny;
       cell.appendChild(G.UI.spriteCanvas(p.dex, 92, 80, { scale: 2, silhouette: !own, shadow: own, shiny: useShiny }));
-      cell.insertAdjacentHTML('beforeend', `<b>${own ? p.name : '???'}</b>${G.UI.stars(p.rarity, 9)}`);
+      cell.insertAdjacentHTML('beforeend', `<b>${own ? p.name : '???'}</b><div class="cell-types">${own ? G.UI.typeChips(p.types) : G.UI.stars(p.rarity, 9)}</div>`);
       cell.onclick = () => {
         dexSel = p.dex;
         grid.querySelectorAll('.cell').forEach(c => c.classList.remove('on'));
@@ -281,28 +281,43 @@ G.MenuUI = (() => {
     const usingThis = isPartner && (!hasSh || !!s.partnerShiny === viewShiny);
 
     const box = $('dex-detail');
+    // Descripción corta según sus números (como la de la selección del otro juego).
+    const blurb = p.atk >= 1.25 ? 'Ofensivo. Más daño, menos vida.' : p.hp >= 110 ? 'Defensivo. Más vida y aguante.' : p.spd >= 118 ? 'Veloz. Llega a todas partes.' : 'Equilibrado. Un poco de todo.';
+    const start = G.Moves.BY_ID[G.startMoveOf(dex)];
+    const movesList = G.Moves.poolFor(p).map(id => G.Moves.BY_ID[id]);
+    const mrow = m => `<div class="move-row${m.id === start.id ? ' start' : ''}">${G.Icons.html('move:' + m.id, 22)}
+        <div class="mr-txt"><b>${m.name}</b>${m.id === start.id ? ' <span class="mr-new">Inicial</span>' : ''}<small>${m.desc || ''}</small></div>
+        <span class="type" style="background:${G.U.TYPE_COLOR[m.type]}">${G.U.TYPE_NAME[m.type]}</span></div>`;
     box.innerHTML = `
-      <canvas id="dex-big" class="stage" width="220" height="190"></canvas>
+      <div class="insp-h">Inspeccionar</div>
+      <div class="insp-top">
+        <canvas id="dex-big" class="stage" width="150" height="130"></canvas>
+        <div class="insp-id">
+          <small>Nº ${String(p.dex).padStart(3, '0')} · ${GEN_NAMES[p.gen - 1]}</small>
+          <h3>${own ? p.name : '???'}</h3>
+          <div>${own ? G.UI.typeChips(p.types) : ''}</div>
+          <div class="insp-blurb" style="color:${G.Gacha.RARITY_COLOR[p.rarity]}">${G.UI.stars(p.rarity, 12)} ${G.Gacha.RARITY_NAME[p.rarity]}</div>
+          ${own ? `<p class="insp-blurb2">${blurb}</p>` : ''}
+        </div>
+      </div>
       ${hasSh ? `<div class="seg">
           <button class="${viewShiny ? '' : 'on'}" data-v="0">Normal</button>
           <button class="${viewShiny ? 'on' : ''}" data-v="1">${G.Icons.html('shiny', 12)} Shiny</button></div>` : ''}
-      <div class="center">
-        <div style="color:var(--muted);font-size:13px">Nº ${String(p.dex).padStart(3, '0')} · ${GEN_NAMES[p.gen - 1]}</div>
-        <h3>${own ? p.name : '???'}</h3>
-        <div style="color:${G.Gacha.RARITY_COLOR[p.rarity]}">${G.UI.stars(p.rarity, 24)} ${G.Gacha.RARITY_NAME[p.rarity]}</div>
-        <div style="margin:6px 0">${own ? G.UI.typeChips(p.types) : ''}</div>
-      </div>
       ${own ? `
+        <div class="insp-sec">Estadísticas</div>
         ${bar('Vida', p.hp, max.hp, p.hp)}
         ${bar('Ataque', p.atk, max.atk, '×' + p.atk.toFixed(2))}
         ${bar('Velocidad', p.spd, max.spd, p.spd)}
-        <p style="font-size:14px;margin:10px 0 4px">Empieza con <b class="gold">${G.Moves.BY_ID[G.startMoveOf(dex)].name}</b></p>
-        <p class="move-icons" title="Movimientos que puede aprender">
-          ${G.Moves.poolFor(p).map(id => `<span title="${G.Moves.BY_ID[id].name}">${G.Icons.html('move:' + id, 16)}</span>`).join('')}</p>
+        <div class="insp-sec">Especial <span>ESPACIO</span></div>
+        <div class="move-row">${G.Icons.html('type:' + p.types[0], 22)}
+          <div class="mr-txt"><b>Impulso</b><small>Un dash con invulnerabilidad que deja una estela y explota al final.</small></div>
+          <span class="type" style="background:${G.U.TYPE_COLOR[p.types[0]]}">${G.U.TYPE_NAME[p.types[0]]}</span></div>
+        <div class="insp-sec">Movimientos</div>
+        <div class="move-list">${movesList.map(mrow).join('')}</div>
         ${copiesBlock(s, dex)}
         ${usingThis
-          ? '<button class="btn grow" disabled style="width:100%">Es tu compañero</button>'
-          : `<button id="dex-pick" class="btn gold" data-sfx="confirm" style="width:100%">Elegir de compañero${viewShiny ? ' (shiny)' : ''}</button>`}
+          ? '<button class="btn confirm" disabled style="width:100%">Es tu compañero</button>'
+          : `<button id="dex-pick" class="btn confirm" data-sfx="confirm" style="width:100%">Elegir a ${p.name}${viewShiny ? ' (shiny)' : ''}</button>`}
       ` : `<p class="center" style="color:var(--muted)">Aún no lo tienes.<br>Consíguelo en el banner de <b class="gold">${GEN_NAMES[p.gen - 1]}</b>
             o derrotándolo cuando salga shiny.</p>`}
     `;
