@@ -99,13 +99,16 @@ G.HUD = (() => {
   let hudAnim = null, hudAnimKey = '', hudAnimT = 0;
   function portrait(ctx, pl, x, y, w, h) {
     const key = pl.mon.dex + (pl.shiny ? 's' : '');
-    if (!hudAnim || hudAnimKey !== key) { hudAnim = new G.Sprites.Animator(pl.mon.dex, 0.5, !!pl.shiny); hudAnimKey = key; hudAnimT = performance.now(); }
+    // Primer plano de la cara, como la tarjeta del otro juego: el sprite grande y recortado.
+    const bh = Math.max(16, G.Sprites.bodyHeight(pl.mon.dex));
+    const k = Math.max(0.5, Math.min(3, h * 2.0 / bh));
+    if (!hudAnim || hudAnimKey !== key) { hudAnim = new G.Sprites.Animator(pl.mon.dex, k, !!pl.shiny); hudAnimKey = key; hudAnimT = performance.now(); }
     const now = performance.now();
     hudAnim.loop('Idle');   // retrato quieto, como la tarjeta del otro juego: no se actualiza la animación
     hudAnimT = now;
     ctx.save();
     ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
-    hudAnim.draw(ctx, Math.round(x + w / 2), Math.round(y + h - 4));
+    hudAnim.draw(ctx, Math.round(x + w / 2), Math.round(y + h * 1.85));
     ctx.restore();
   }
   /** Caja de combate estilo GBA: papel con doble marco, retrato, nombre, nivel y PS. */
@@ -121,11 +124,13 @@ G.HUD = (() => {
     ctx.fillText(pl.mon.name.length > 11 ? pl.mon.name.slice(0, 10) + '.' : pl.mon.name, x + 70, y + 26);
     ctx.textAlign = 'right';
     ctx.font = PS(8);
-    ctx.fillText('Nv' + pl.level, x + cw - 12, y + 26);
+    ctx.fillText('Lv' + pl.level, x + cw - 12, y + 26);
     ctx.textAlign = 'left';
-    ctx.font = PS(7); ctx.fillStyle = '#c83030';
-    ctx.fillText('PS', x + 70, y + 46);
-    gbaHp(ctx, x + 92, y + 38, cw - 92 - 14, 9, pl.hp / pl.maxHp);
+    ctx.fillStyle = '#283040'; ctx.fillRect(x + 69, y + 35, 22, 13);
+    ctx.fillStyle = '#e8b830'; ctx.fillRect(x + 70, y + 36, 20, 11);
+    ctx.font = PS(7); ctx.fillStyle = '#283040';
+    ctx.fillText('HP', x + 72, y + 45);
+    gbaHp(ctx, x + 96, y + 38, cw - 96 - 14, 9, pl.hp / pl.maxHp);
     ctx.font = VT(18); ctx.fillStyle = '#303040'; ctx.textAlign = 'right';
     ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), x + cw - 14, y + 62);
     return y;
