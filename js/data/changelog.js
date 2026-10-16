@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Iconos de objetos, Poké Ball, baya, imán y monedas con el arte pixel de Pokémon Survivors (MIT, pedrobarretto).",
+     "Item, Poké Ball, berry, magnet and coin icons now use the pixel art from Pokémon Survivors (MIT, pedrobarretto)."],
     ["Subir de nivel como en Pokémon Survivors: panel más estrecho, \"X subió a Nv N\", carta elegida con borde rojo (flechas + Intro o 1-3), etiqueta ¡NUEVO! y la receta de evolución (movimiento + objeto de tipo). Nuevas Poké Balls por el mapa con premio sorpresa: baya, imán, bomba, monedas, experiencia u objeto.",
      "Level-up like Pokémon Survivors: narrower panel, \"X grew to Lv N\", red border on the chosen card (arrows + Enter or 1-3), NEW! tag and the evolution recipe (move + type item). New Poké Balls on the map with a surprise prize: berry, magnet, bomb, coins, XP or an item."],
     ["Gritos de cada Pokémon (al elegirlo, al empezar, al evolucionar, jefes, gacha y huevos; se bajan de PokeAPI y usan el volumen de Efectos). Golpes con destello de impacto, sacudida del enemigo y animación de daño; cambio de mapa con fundido suave; clima más visible (sol con resplandor, lluvia con relámpagos, bruma y arena en movimiento).",

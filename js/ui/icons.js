@@ -298,7 +298,10 @@ G.Icons = (() => {
   function canvas(name) {
     let cv = cache.get(name);
     if (cv) return cv;
-    if (name.startsWith('move:')) {
+    const ps = G.ArtPS && G.ArtPS.get(name);
+    if (ps) {
+      cv = ps;
+    } else if (name.startsWith('move:')) {
       const m = G.Moves.BY_ID[name.slice(5)];
       cv = emblem(m ? m.type : 'normal', m ? m.kind : null);
     } else if (name.startsWith('type:')) {
@@ -316,7 +319,7 @@ G.Icons = (() => {
     let u = urls.get(name);
     if (!u) {
       // Los de interfaz, directamente de su dibujo; los emblemas (tipos, movimientos), del canvas.
-      const plain = !name.startsWith('move:') && !name.startsWith('type:') && (UI[name] || !(G.Items && G.Items.BY[name] && G.Items.BY[name].type));
+      const plain = !(G.ArtPS && G.ArtPS.get(name)) && !name.startsWith('move:') && !name.startsWith('type:') && (UI[name] || !(G.Items && G.Items.BY[name] && G.Items.BY[name].type));
       u = plain ? svgOfRows(UI[name] || UI.star) : svgOf(canvas(name));
       urls.set(name, u);
     }
