@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["HUD estilo Pokémon en ordenador: caja de combate abajo a la izquierda con retrato, nombre, nivel y barra de PS, y huecos de poderes cuadrados.",
+     "Pokémon-style HUD on computers: a battle box at the bottom left with portrait, name, level and HP bar, and square power slots."],
     ["Píxel perfecto: en ordenador el mundo se dibuja a baja resolución y se amplía a un múltiplo entero, así todos los píxeles miden lo mismo (como en los juegos clásicos). Se puede cambiar en Ajustes > Píxel perfecto.",
      "Pixel perfect: on computers the world is drawn at low resolution and scaled up by a whole number, so every pixel is the same size (like classic games). You can change it in Settings > Pixel perfect."],
     ["Huevos: caen de jefes, cofres con candado y legendarios de las grietas (hasta 2 por partida; el primero es seguro). Van a la incubadora (3 espacios) y eclosionan con los pasos que andas jugando: 2.000, 4.000 u 8.000 según el tipo. Sale cualquiera de tus Pokémon según la rareza del huevo, y 1 de cada 100 es shiny. Los repetidos quedan como copias.",

@@ -14,6 +14,64 @@ G.HUD = (() => {
     ctx.closePath();
   }
 
+  // ---- estilo pixel: paneles de esquinas "mordidas" y caja de combate (ordenador) ----
+  const INK = '#1b2447', PAPER = '#f6f4ea', EDGE = '#243055';
+  /** Rectángulo pixel art: borde de 2 px y esquinas recortadas. */
+  function pxBox(ctx, x, y, w, h, fill, edge) {
+    ctx.fillStyle = edge; ctx.fillRect(x + 2, y, w - 4, h); ctx.fillRect(x, y + 2, w, h - 4);
+    ctx.fillStyle = fill; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+    ctx.fillRect(x + 1, y + 2, 1, h - 4); ctx.fillRect(x + w - 2, y + 2, 1, h - 4);
+  }
+  /** Barra de vida cuadrada, verde, amarilla o roja según lo que queda. */
+  function hpBar(ctx, x, y, w, h, f) {
+    f = G.U.clamp(f, 0, 1);
+    ctx.fillStyle = EDGE; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#39406a'; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+    if (f > 0) {
+      ctx.fillStyle = f > 0.5 ? '#4cd964' : f > 0.2 ? '#ffcc00' : '#ff4d4d';
+      ctx.fillRect(x + 1, y + 1, Math.max(1, Math.round((w - 2) * f)), h - 2);
+      ctx.fillStyle = 'rgba(255,255,255,.35)';
+      ctx.fillRect(x + 1, y + 1, Math.max(1, Math.round((w - 2) * f)), 1);
+    }
+  }
+  // Retrato de tu Pokémon (animación Idle a 1 píxel de arte = 1 px de pantalla).
+  let hudAnim = null, hudAnimKey = '', hudAnimT = 0;
+  function portrait(ctx, pl, x, y, w, h) {
+    const key = pl.mon.dex + (pl.shiny ? 's' : '');
+    if (!hudAnim || hudAnimKey !== key) { hudAnim = new G.Sprites.Animator(pl.mon.dex, 0.5, !!pl.shiny); hudAnimKey = key; hudAnimT = performance.now(); }
+    const now = performance.now();
+    hudAnim.loop('Idle');
+    hudAnim.update(Math.min(0.1, (now - hudAnimT) / 1000)); hudAnimT = now;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    hudAnim.draw(ctx, Math.round(x + w / 2), Math.round(y + h - 4));
+    ctx.restore();
+  }
+  /** Caja de combate abajo a la izquierda: retrato, nombre, nivel y vida. */
+  function battleCard(ctx, w, h, pl) {
+    const cw = 214, ch = 62, x = 12, y = h - ch - 12;
+    pxBox(ctx, x, y, cw, ch, PAPER, EDGE);
+    pxBox(ctx, x + 5, y + 5, 52, 52, '#cfdcf2', EDGE);
+    portrait(ctx, pl, x + 6, y + 6, 50, 50);
+    ctx.textAlign = 'left';
+    ctx.font = F(800, 13);
+    ctx.fillStyle = INK;
+    ctx.fillText(pl.mon.name, x + 66, y + 22);
+    ctx.textAlign = 'right';
+    ctx.font = F(800, 12);
+    ctx.fillText('Nv.' + pl.level, x + cw - 10, y + 22);
+    ctx.textAlign = 'left';
+    ctx.font = F(800, 10);
+    ctx.fillStyle = '#c0392b';
+    ctx.fillText('PS', x + 66, y + 40);
+    hpBar(ctx, x + 84, y + 32, cw - 84 - 12, 9, pl.hp / pl.maxHp);
+    ctx.font = F(700, 10);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = INK;
+    ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), x + cw - 10, y + 56);
+    return y;
+  }
+
   function bar(ctx, x, y, w, h, frac, col, bg = 'rgba(0,0,0,.55)') {
     roundRect(ctx, x, y, w, h, h / 2); ctx.fillStyle = bg; ctx.fill();
     if (frac > 0) {
@@ -41,21 +99,27 @@ G.HUD = (() => {
     ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
 
     // ---------- vida + nivel ----------
+    // Ordenador: caja de combate abajo a la izquierda. Móvil: arriba, como antes.
     const px = 16, py = 20;
-    ctx.font = F(800, 13);
-    ctx.fillStyle = '#eaf2ff';
-    ctx.textAlign = 'left';
-    ctx.fillText(pl.mon.name, px, py + 10);
+    let chipY = py + 34;                        // dónde van las etiquetas de mejoras activas
+    if (touch) {
+      ctx.font = F(800, 13);
+      ctx.fillStyle = '#eaf2ff';
+      ctx.textAlign = 'left';
+      ctx.fillText(pl.mon.name, px, py + 10);
 
-    ctx.font = F(700, 11);
-    ctx.fillStyle = '#ffcb3d';
-    ctx.fillText('Nv. ' + pl.level, px, py + 26);
+      ctx.font = F(700, 11);
+      ctx.fillStyle = '#ffcb3d';
+      ctx.fillText('Nv. ' + pl.level, px, py + 26);
 
-    bar(ctx, px + 48, py + 17, 168, 11, pl.hp / pl.maxHp, '#ff5f6d');
-    ctx.font = F(700, 10);
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.textAlign = 'center';
-    ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), px + 48 + 84, py + 26);
+      bar(ctx, px + 48, py + 17, 168, 11, pl.hp / pl.maxHp, '#ff5f6d');
+      ctx.font = F(700, 10);
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.textAlign = 'center';
+      ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), px + 48 + 84, py + 26);
+    } else {
+      chipY = battleCard(ctx, w, h, pl) - 22;
+    }
 
     // buffs activos
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
@@ -68,10 +132,10 @@ G.HUD = (() => {
       ctx.font = F(800, 9);
       const txt = LBL[k] + ' ×' + b.n;
       const tw = ctx.measureText(txt).width + 12;
-      roundRect(ctx, bx, py + 34, tw, 15, 7);
+      roundRect(ctx, bx, chipY, tw, 15, 7);
       ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill();
       ctx.fillStyle = COL[k];
-      ctx.fillText(txt, bx + 6, py + 45);
+      ctx.fillText(txt, bx + 6, chipY + 11);
       bx += tw + 5;
     }
 
@@ -138,14 +202,14 @@ G.HUD = (() => {
       ctx.font = F(800, 9);
       ctx.textAlign = 'left';
       const tw = ctx.measureText(txt).width + 12;
-      roundRect(ctx, bx, py + 34, tw, 15, 7);
+      roundRect(ctx, bx, chipY, tw, 15, 7);
       ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fill();
       ctx.fillStyle = pw.def.color;
-      ctx.fillText(txt, bx + 6, py + 45);
+      ctx.fillText(txt, bx + 6, chipY + 11);
       bx += tw + 5;
     }
 
-    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, py + (bx > px ? 56 : 40));
+    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, touch ? py + (bx > px ? 56 : 40) : 18);
 
     // Grieta: flecha grande que late en el borde si no se ve, y si se ve, una
     // flecha que bota encima; en la arena, cuenta atrás.
@@ -270,14 +334,9 @@ G.HUD = (() => {
       if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing' && pl.active !== i) { pl.setActive(i); G.Audio.sfx('click'); } }, GAP / 2 + 3);
       const col = m ? G.U.TYPE_COLOR[m.type] : '#4a5468';
 
-      // fondo
-      roundRect(ctx, x, y, S, S, 12);
-      ctx.fillStyle = on ? 'rgba(20,30,50,.95)' : 'rgba(10,16,28,.8)';
-      ctx.fill();
-      ctx.lineWidth = on ? 2.5 : fused || (m && m.evolved) ? 2 : 1.2;
-      // Vínculo: borde rosa. Evolucionado: dorado.
-      ctx.strokeStyle = fused ? BOND : m && m.evolved ? '#ffd23f' : on ? col : 'rgba(140,170,210,.22)';
-      ctx.stroke();
+      // fondo (cuadrado pixel). Vínculo: borde rosa. Evolucionado: dorado.
+      pxBox(ctx, x, y, S, S, on ? '#18213d' : '#10172b',
+            fused ? BOND : m && m.evolved ? '#ffd23f' : on ? col : '#3a4670');
 
       if (!m) continue;
 
@@ -299,7 +358,7 @@ G.HUD = (() => {
         const cdFrac = cdOf(m);
         if (cdFrac > 0) {
           ctx.save();
-          roundRect(ctx, x, y, S, S, 12); ctx.clip();
+          ctx.beginPath(); ctx.rect(x + 2, y + 2, S - 4, S - 4); ctx.clip();
           ctx.fillStyle = 'rgba(0,0,0,.6)';
           ctx.fillRect(x, y, S, S * cdFrac);
           ctx.restore();
@@ -348,12 +407,7 @@ G.HUD = (() => {
     // ---------- objeto equipado (a la izquierda de los movimientos) ----------
     {
       const ix = sx - S - 18, iy = sy;
-      roundRect(ctx, ix, iy, S, S, 12);
-      ctx.fillStyle = pl.item ? 'rgba(40,30,10,.9)' : 'rgba(10,16,28,.55)';
-      ctx.fill();
-      ctx.lineWidth = pl.item ? 2 : 1;
-      ctx.strokeStyle = pl.item ? '#ffd23f' : 'rgba(140,170,210,.18)';
-      ctx.stroke();
+      pxBox(ctx, ix, iy, S, S, pl.item ? '#2c220d' : '#10172b', pl.item ? '#ffd23f' : '#3a4670');
       if (pl.item) {
         G.Icons.draw(ctx, pl.item, ix + (S - 36) / 2, iy + (S - 36) / 2, 36);
         ctx.font = F(700, 9);
