@@ -36,6 +36,12 @@ G.Tiles = (() => {
       prop: 'dead', leaf: ['#4a3a30', '#5e4a3c', '#6f5a49', '#806a58'], trunk: ['#3a2e27', '#52423a'],
       rock: ['#4e4642', '#6a605b', '#877c76'], grass: ['#6b4a2a', '#94693a', '#c4914e'] },
   ];
+  // Suelo estilo Pokémon Survivors (MIT): tres tonos de base, de zona "alta" y de camino por bioma.
+  const PS_GROUND = [
+    { base: ['#8fd068', '#88c862', '#80c05c'], alt: ['#74b452', '#6eac4e', '#67a448'], path: ['#d8c088', '#d0b880', '#c8b078'] },   // pradera
+    { base: ['#76686a', '#706264', '#6a5c5e'], alt: ['#544848', '#4e4243', '#483c3e'], path: ['#9c8c7c', '#a49484', '#948474'] },   // cueva
+    { base: ['#7a5a46', '#725240', '#6a4c3a'], alt: ['#56402f', '#503a2b', '#493426'], path: ['#a8826a', '#a07a62', '#98725a'] }    // volcán
+  ];
   const NORMAL = 3;                   // biomas que se van turnando en una run
   const ARENA = 3;                    // a partir de aquí, las arenas de la grieta (una por tipo)
 
@@ -207,6 +213,16 @@ G.Tiles = (() => {
     return (x, y) => mask[(y + 1) * W + x] === 1;
   }
 
+  let PSEED = 0;
+  /** Ruido de valor bilineal en [0,1), como el del suelo de Pokémon Survivors. */
+  function vnoise(x, y, scale, seed) {
+    const gx = x / scale, gy = y / scale, x0 = Math.floor(gx), y0 = Math.floor(gy);
+    const tx = gx - x0, ty = gy - y0, sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
+    const a = H(x0, y0, seed), b = H(x0 + 1, y0, seed), c = H(x0, y0 + 1, seed), d = H(x0 + 1, y0 + 1, seed);
+    return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+  }
+  const psPath = (gx, gy, w) => Math.abs(vnoise(gx, gy, 220, PSEED + 7) - 0.5) < w;
+
   function paintChunk(cx, cy, n, at, dirtField, bi, seed = 0) {
     const B = BIOMES[bi];
     const P = Pix(n * T, n * T);
@@ -216,6 +232,13 @@ G.Tiles = (() => {
     for (const k of ['speck', 'light', 'wallLight', 'wallEdge', 'wallFaceDark', 'liq', 'liqDeep', 'foam', 'shore'])
       C[k] = pack(B[k]);
     C.liqLight = mixPack(B.liq, B.foam, 0.28);
+    // Suelo estilo Pokémon Survivors: tonos de base / zona alta / camino.
+    const PSG = PS_GROUND[bi] || { base: B.floor, alt: B.floor.map(h => shade(h, -0.14)), path: B.dirt };
+    C.ps = { base: PSG.base.map(h => pack(h)), alt: PSG.alt.map(h => pack(h)), path: PSG.path.map(h => pack(h)) };
+    C.psTuft = [pack(shade(PSG.alt[2], -0.12)), pack(shade(PSG.alt[0], 0.04))];
+    C.psFlowers = B.flowers.map(h => pack(h));
+    C.psRock = [pack('#6a6458'), pack('#a8a090'), pack('#d8d0c0')];
+    PSEED = seed;
 
     const tx0 = cx * n, ty0 = cy * n;
     const dirtAt = dirtMask(tx0 * T, ty0 * T, n * T, dirtField, seed);
@@ -236,7 +259,50 @@ G.Tiles = (() => {
     return P.canvas();
   }
 
+  /** Suelo estilo Pokémon Survivors: manchas de zona alta, caminos de tierra y matas en las zonas densas. */
+  function paintFloorPS(P, C, ox, oy, tx, ty, at) {
+    for (let y = 0; y < T; y++) {
+      for (let x = 0; x < T; x++) {
+        const gx = tx * T + x, gy = ty * T + y;
+        const path = psPath(gx, gy, 0.025);
+        const r = H(gx, gy, PSEED + 1);
+        const pal = path ? C.ps.path : vnoise(gx, gy, 96, PSEED) > 0.55 ? C.ps.alt : C.ps.base;
+        P.set(ox + x, oy + y, pal[r < 0.7 ? 0 : r < 0.9 ? 1 : 2]);
+      }
+    }
+    // Sombra de contacto bajo las paredes que hay justo al norte.
+    if (at(tx, ty - 1) === 'wall') {
+      for (let x = 0; x < T; x++) { P.set(ox + x, oy, C.wallFaceDark); if ((x + ty) % 2) P.set(ox + x, oy + 1, C.speck); }
+    }
+    const wx = tx * T, wy = ty * T;
+    if (psPath(wx, wy, 0.04)) return;                         // los caminos, limpios
+    const dense = vnoise(wx, wy, 140, PSEED + 3) > 0.68;
+    const roll = H(tx, ty, PSEED + 2);
+    const jx = Math.floor(H(wx, wy, PSEED + 4) * 10), jy = Math.floor(H(wx, wy, PSEED + 5) * 10);
+    const tuft = (px, py) => {                                // mata: ['.1...1.', '121.121', '1221221', '.12221.']
+      const d = C.psTuft[0], l = C.psTuft[1];
+      for (const [dx, dy, c] of [[0, 0, d], [4, 0, d], [-1, 1, d], [0, 1, l], [1, 1, d], [3, 1, d], [4, 1, l], [5, 1, d],
+                                 [-2, 2, d], [-1, 2, l], [0, 2, l], [1, 2, d], [2, 2, d], [3, 2, l], [4, 2, l], [5, 2, d],
+                                 [-1, 3, d], [0, 3, l], [1, 3, l], [2, 3, l], [3, 3, d]]) P.set(px + 2 + dx, py + dy, c);
+    };
+    if (dense) {
+      tuft(ox + 1, oy + 3); tuft(ox + 9, oy + 3); tuft(ox + 5, oy + 10);
+    } else if (roll < 0.05) {
+      const fc = C.psFlowers[Math.floor(H(wx, wy, PSEED + 6) * C.psFlowers.length)];
+      for (const [px, py] of [[ox + jx, oy + jy], [ox + (jx + 5) % 12, oy + (jy + 4) % 12]]) {
+        P.set(px + 1, py, fc); P.set(px, py + 1, fc); P.set(px + 2, py + 1, fc); P.set(px + 1, py + 2, fc); P.set(px + 1, py + 1, C.psRock[1]);
+      }
+    } else if (roll < 0.2) {
+      P.set(ox + jx, oy + jy, C.psTuft[0]); P.set(ox + jx + 2, oy + jy, C.psTuft[0]); P.set(ox + jx + 1, oy + jy + 1, C.psTuft[0]);
+    } else if (roll < 0.215) {
+      const r0 = C.psRock;
+      for (const [dx, dy, c] of [[1, 0, r0[0]], [2, 0, r0[0]], [3, 0, r0[0]], [0, 1, r0[0]], [1, 1, r0[1]], [2, 1, r0[1]], [3, 1, r0[2]], [4, 1, r0[0]],
+                                 [1, 2, r0[0]], [2, 2, r0[1]], [3, 2, r0[1]], [4, 2, r0[0]], [1, 3, r0[0]], [2, 3, r0[0]], [3, 3, r0[0]]]) P.set(ox + jx + dx, oy + jy + dy, c);
+    }
+  }
+
   function paintFloor(P, C, ox, oy, tx, ty, dirtAt, at) {
+    if (G.Settings.get('skin') !== 'classic') { paintFloorPS(P, C, ox, oy, tx, ty, at); return; }
     let dirtCount = 0;
     for (let y = 0; y < T; y++) {
       for (let x = 0; x < T; x++) {
