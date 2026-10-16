@@ -307,3 +307,18 @@ body.gba .cell.on { transform: translateY(-6px); box-shadow: inset 0 0 0 2px #ff
 .move-row .type { font-size: 8px; flex: none; }
 .btn.confirm { margin-top: 10px; font-family: 'Press Start 2P', monospace; font-size: 10px; border: 3px solid #d83830; background: #fff; color: #283040; box-shadow: 0 3px 0 #d83830; }
 .btn.confirm:disabled { border-color: #8890a8; color: #8890a8; box-shadow: none; }
+
+/* ---- Subir de nivel, como el otro juego: panel estrecho, carta elegida con borde rojo, receta ---- */
+.gba #scr-levelup .box { max-width: 560px; }
+.gba #scr-levelup h2 { font-size: 12px; line-height: 1.5; }
+.lvl-hint { font-family: 'Press Start 2P', monospace; font-size: 7px; text-align: center; margin: 12px 0 0; opacity: .65; letter-spacing: .5px; }
+.gba .card { align-items: center; }
+.gba .card.sel { background: #fff; border-color: #e8403c; box-shadow: 0 0 0 2px #fff, 0 3px 0 rgba(0,0,0,.18); }
+.gba .card.sel .key { background: #e8403c; }
+.gba .card .ico { flex: 0 0 46px; height: 46px; background: #1c2030; border: 2px solid #283040; }
+.gba .card .nm { gap: 6px; }
+.gba .card .nm .tag-chip { margin-left: auto; order: 3; }
+.card .newtag { font-style: normal; font-family: 'Press Start 2P', monospace; font-size: 7px; color: #e8403c; }
+.recipe { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.recipe i { font-style: normal; font-family: 'VT323', monospace; font-size: 18px; color: #5d6690; }
+.recipe img { background: #1c2030; border-radius: 3px; padding: 1px; }

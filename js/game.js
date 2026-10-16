@@ -23,6 +23,7 @@ G.Game = (() => {
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
+  let ballT = 25;           // cuenta atrás de la próxima Poké Ball
   // Cambio de mapa: la imagen del bioma anterior se desvanece sobre el nuevo.
   let dissolve = null, dissolveT = 0;
   const DISSOLVE = 1.6;
@@ -482,7 +483,7 @@ G.Game = (() => {
 
   // ---------------- recogida ----------------
 
-  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend' };
+  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend', ball: 'shinyGet' };
 
   /*
    * Cooperativo: la elección de objeto y las cartas de nivel no pueden taparse.
@@ -581,6 +582,19 @@ G.Game = (() => {
       if (mine) offerItem(p.value);
       return;
     }
+    if (p.kind === 'ball') {
+      // Poké Ball: premio sorpresa.
+      const r = Math.random();
+      G.FX.burst(who.x, who.y - who.bodyH * 0.5, '#ff5f6d', 14, 160);
+      G.FX.ring(who.x, who.y, 8, 70, '#ffffff', 0.4, 4);
+      if (r < 0.28) { G.Spawner.say('¡Poké Ball: una Baya!', 2, true); onCollect({ kind: 'heal', value: 0 }, who); }
+      else if (r < 0.42) { G.Spawner.say('¡Poké Ball: un Imán!', 2, true); onCollect({ kind: 'magnet', value: 0 }, who); }
+      else if (r < 0.56) { G.Spawner.say('¡Poké Ball: una Bomba!', 2, true); onCollect({ kind: 'bomb', value: 0 }, who); }
+      else if (r < 0.78) { const c = 40 + Math.round(pl.level * 6); G.Spawner.say('¡Poké Ball: ' + c + ' monedas!', 2, true); onCollect({ kind: 'coin', value: c }, who); }
+      else if (r < 0.95) { G.Spawner.say('¡Poké Ball: experiencia!', 2, true); onCollect({ kind: 'xpBig', value: 30 + pl.level * 6 }, who); }
+      else { const id = G.Items.roll(); G.Spawner.say('¡Poké Ball: ' + G.Items.BY[id].name + '!', 2.4, true); onCollect({ kind: 'item', value: id }, who); }
+      return;
+    }
     if (p.kind === 'ticket' || p.kind === 'ticket10') {
       if (p.kind === 'ticket') pl.t1++; else pl.t10++;
       bankTickets();
@@ -623,6 +637,9 @@ G.Game = (() => {
         if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) G.RunUI.pick(i);
       }
       if (G.Input.tap('keyr')) G.RunUI.reroll();
+      if (G.Input.tap('arrowup') || G.Input.tap('keyw')) G.RunUI.move(-1);
+      if (G.Input.tap('arrowdown') || G.Input.tap('keys')) G.RunUI.move(1);
+      if (G.Input.tap('enter') || G.Input.tap('numpadenter')) G.RunUI.confirm();
       return;
     }
     if (G.UI.isOpen('scr-bond')) {
@@ -762,6 +779,17 @@ G.Game = (() => {
     pl.frozen = coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item'));
     pl.update(dt);
     G.Evo.tick(pl);
+    // Poké Balls por el mapa (una cada 40-70 s, como mucho 3 a la vez).
+    if ((!coop || G.Coop.isHost) && !pl.dead) {
+      ballT -= dt;
+      if (ballT <= 0) {
+        ballT = G.U.rand(40, 70);
+        if (G.Pickups.all().filter(p => p.kind === 'ball').length < 3) {
+          const a = Math.random() * 6.2832, d = G.U.rand(260, 480);
+          G.Pickups.drop('ball', pl.x + Math.cos(a) * d, pl.y + Math.sin(a) * d);
+        }
+      }
+    }
     // Pasos para los huevos: lo que andas (no los saltos de teletransporte).
     if (!pl.dead) { if (eggLast) G.Eggs.walk(G.U.dist(pl.x, pl.y, eggLast.x, eggLast.y)); eggLast = { x: pl.x, y: pl.y }; }
     if (coop) {

@@ -1,12 +1,14 @@
 /* ============ run-ui.js — cartas de nivel, pausa y fin de run ============ */
 G.RunUI = (() => {
   const $ = G.UI.$;
-  let offers = null, offerCb = null, coopMode = false;
+  let offers = null, offerCb = null, coopMode = false, sel = 0;
 
   /** @param coop  en grupo: tras elegir, se queda esperando a los demás */
   function showLevelUp(level, list, cb, coop = false) {
     offerCb = cb; coopMode = coop;
     $('lvl-num').textContent = level;
+    const gp = G.Game.player;
+    $('lvl-name').textContent = gp && gp.mon ? gp.mon.name : 'Tu Pokémon';
     $('lvl-wait').textContent = '';
     $('lvl-wait').classList.toggle('hidden', !coop);
     $('cards').classList.remove('done');
@@ -34,7 +36,7 @@ G.RunUI = (() => {
   }
 
   function renderCards(list) {
-    offers = list;
+    offers = list; sel = 0;
     const left = rerollsLeft();
     $('lvl-rr-n').textContent = left;
     $('lvl-reroll').classList.toggle('hidden', left <= 0);
@@ -42,22 +44,34 @@ G.RunUI = (() => {
     box.innerHTML = '';
     list.forEach((c, i) => {
       const el = document.createElement('div');
-      el.className = 'card';
+      el.className = 'card' + (i === sel ? ' sel' : '');
+      const isNew = c.type === 'new' || (c.type === 'item' && !c.forEvo);
       const tag = c.type === 'new'
-        ? `<span class="tag-chip" style="background:${c.color}">Nuevo · ${c.tag}</span>`
-        : c.type === 'up' || c.type === 'evo'
-          ? `<span class="tag-chip" style="background:${c.color}">${c.tag}</span>`
-          : `<span class="tag-chip" style="background:${c.color === '#ffd23f' ? '#ffd23f' : '#9fb1c9'}">${c.tag}</span>`;
+        ? `<span class="tag-chip" style="background:${c.color}">${c.tag}</span>`
+        : `<span class="tag-chip" style="background:${c.color === '#ffd23f' ? '#ffd23f' : c.color}">${c.tag}</span>`;
       if (c.type === 'evo') el.classList.add('evo');
+      const recipe = c.recipe
+        ? `<div class="recipe">${G.Icons.html(c.recipe[0], 16)}<i>+</i>${G.Icons.html(c.recipe[1], 16)}<i>→</i>${G.Icons.html('star', 16)}</div>` : '';
       el.innerHTML =
-        `<div class="ico" style="background:${c.color}33">${G.Icons.html(c.icon, 32)}</div>
-         <div class="txt"><div class="nm">${c.title} ${tag}</div><div class="ds">${c.desc}</div></div>
+        `<div class="ico">${G.Icons.html(c.icon, 32)}</div>
+         <div class="txt"><div class="nm">${c.title}${isNew ? ' <em class="newtag">¡NUEVO!</em>' : ''}${tag}</div><div class="ds">${c.desc}</div>${recipe}</div>
          <div class="key">${i + 1}</div>`;
+      el.onmouseenter = () => select(i, true);
       el.dataset.sfx = 'none';             // el juego pone su propio sonido al elegir
       el.onclick = () => pick(i);
       box.appendChild(el);
     });
   }
+
+  function select(i, quiet) {
+    if (!offers || i === sel) return;
+    sel = i;
+    $('cards').querySelectorAll('.card').forEach((el, j) => el.classList.toggle('sel', j === sel));
+    if (!quiet) G.Audio.sfx('select');
+  }
+  /** Flechas arriba/abajo y Intro (cartas de subir de nivel). */
+  function move(d) { if (offers) select((sel + d + offers.length) % offers.length); }
+  function confirm() { pick(sel); }
 
   function pick(i) {
     if (!offers || !offers[i]) return;
@@ -241,5 +255,5 @@ G.RunUI = (() => {
     $('btn-quit').onclick = onQuit;
   }
 
-  return { showLevelUp, reroll, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
+  return { showLevelUp, move, confirm, reroll, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
 })();

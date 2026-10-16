@@ -77,6 +77,9 @@ G.Icons = (() => {
     berry: { pal: { r: '#ff7a9e', s: '#c23a6b', w: '#ffd3e0', g: '#5fe08a', d: '#2f9a52' }, rows: [
       '............', '.....kkk....', '....kgggk...', '..kkkgdkkk..', '.krrrkkrrrk.', 'krwwrrrrrrsk',
       'krwrrrrrrrsk', 'krrrrrrrrrsk', 'krrrrrrrrssk', '.krrrrrrssk.', '..kkssssskk.', '....kkkkk...'] },
+    pokeball: { pal: { r: '#e8403c', s: '#a82824', w: '#f8f8f8', g: '#c0c8d8', b: '#ffffff' }, rows: [
+      '............', '...kkkkkk...', '..krrrrrrk..', '.krrwrrrrrk.', 'krrwrrrrrrsk', 'krrrrrrrrrsk',
+      'kkkkkbbkkkkk', 'kwwwwkbkwwwk', 'kwwwwwkwwwgk', '.kwwwwwwwgk.', '..kggggggk..', '...kkkkkk...'] },
     bomb: { pal: { b: '#3a3a4a', w: '#8a8aa0', f: '#ffd23f', r: '#ff7b3d' }, rows: [
       '........r...', '.......rfr..', '......kfr...', '.....kfk....', '...kkkkkk...', '..kbbbbbbk..',
       '.kbwwbbbbbk.', '.kbwbbbbbbk.', '.kbbbbbbbbk.', '.kbbbbbbbbk.', '..kbbbbbbk..', '...kkkkkk...'] },

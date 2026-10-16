@@ -45,6 +45,7 @@ G.LevelUp = (() => {
           icon: 'move:' + id, color: G.U.TYPE_COLOR[d.type],
           tag: G.U.TYPE_NAME[d.type],
           title: d.name, desc: d.desc,
+          recipe: G.Moves.EVO[id] && G.Items.TYPE_ITEM[d.type] ? ['move:' + id, G.Items.TYPE_ITEM[d.type]] : null,
           apply: p => p.addMove(id)
         });
       }
@@ -64,7 +65,7 @@ G.LevelUp = (() => {
           out.push({
             w: forEvo ? 30 : 9, forEvo, type: 'item', key: 'item:' + it.id,
             icon: it.id, color: '#ffd23f', tag: forEvo ? 'Objeto · desbloquea evolución' : 'Objeto · Nv.1',
-            title: it.name, desc: it.desc(1),
+            title: it.name, desc: it.desc(1), recipe: it.type ? [it.id, 'type:' + it.type] : null,
             apply: p => p.addItem(it.id)
           });
         }
