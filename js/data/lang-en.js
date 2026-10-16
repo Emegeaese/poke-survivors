@@ -587,5 +587,9 @@ G.I18n.add({
   '¡Has encontrado un huevo común!': 'You found a common egg!', '¡Has encontrado un huevo raro!': 'You found a rare egg!', '¡Has encontrado un huevo épico!': 'You found an epic egg!',
   'Los huevos eclosionan con los <b>pasos</b> que das jugando (16 px = 1 paso): se suman al acabar cada partida.<br>': 'Eggs hatch with the <b>steps</b> you take while playing (16 px = 1 step): they are added when each run ends.<br>',
   'Huevos encontrados': 'Eggs found', 'abiertos': 'opened', 'pasos totales': 'total steps', 'pasos': 'steps',
-  '¡SHINY NUEVO!': 'NEW SHINY!', '¡NUEVO!': 'NEW!'
+  '¡SHINY NUEVO!': 'NEW SHINY!', '¡NUEVO!': 'NEW!',
+
+  // ---------------- píxel perfecto ----------------
+  'Píxel perfecto': 'Pixel perfect', 'Sí': 'Yes',
+  'Dibuja el mundo con todos los píxeles del mismo tamaño, como en los juegos clásicos. <b>Auto</b>: sí en ordenador, no en móvil.': 'Draws the world with every pixel the same size, like classic games. <b>Auto</b>: yes on computers, no on phones.'
 });

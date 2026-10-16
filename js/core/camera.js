@@ -23,6 +23,18 @@ G.Camera = {
     this.h = cssH / this.scale;
   },
 
+  /**
+   * Modo píxel perfecto: el mundo se dibuja en un lienzo pequeño de iw × ih
+   * píxeles (1 unidad de mundo = 1 píxel) que luego se amplía a un múltiplo
+   * entero. Así todos los píxeles de arte miden lo mismo.
+   */
+  resizePx(iw, ih) {
+    this.dpr = 1;
+    this.scale = 1;
+    this.w = iw;
+    this.h = ih;
+  },
+
   follow(tx, ty, dt) {
     this.x = G.U.damp(this.x, tx, 9, dt);
     this.y = G.U.damp(this.y, ty, 9, dt);

@@ -16,6 +16,8 @@
  */
 G.Game = (() => {
   let cv, ctx, dpr = 1, w = 0, h = 0;
+  // Píxel perfecto: el mundo se dibuja en `wcv` (iw × ih) y se amplía Sd veces (entero) sobre `cv`.
+  let wcv, wctx, pix = false, Sd = 1, iw = 0, ih = 0, ox = 0, oy = 0;
   let state = 'ui';
   let time = 0, last = 0, pendingLevels = 0;
   let pl = null;
@@ -29,8 +31,11 @@ G.Game = (() => {
   function init() {
     cv = document.getElementById('game');
     ctx = cv.getContext('2d');
+    wcv = document.createElement('canvas');
+    wctx = wcv.getContext('2d');
     resize();
     addEventListener('resize', resize);
+    G.Settings.on(k => { if (k === 'pixel') resize(); });
     G.Touch.init(cv);
     // En móvil: al cambiar de app o girarlo en vertical, la partida se pausa.
     document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
@@ -47,8 +52,48 @@ G.Game = (() => {
     w = cv.clientWidth; h = cv.clientHeight;
     cv.width = Math.round(w * dpr);
     cv.height = Math.round(h * dpr);
-    G.Camera.resize(w, h, dpr);
+    const p = G.Settings.get('pixel');
+    pix = p === 'on' || (p !== 'off' && !G.Settings.touch);
+    if (pix) {
+      // Cada píxel interno ocupa Sd píxeles de pantalla (entero). Se busca un ancho interno de unos 780
+      // (como mucho, sin bajar de ~280 de alto).
+      const pw = cv.width, ph = cv.height;
+      Sd = Math.max(1, Math.round(pw / 780));
+      while (Sd > 1 && ph / Sd < 280) Sd--;
+      iw = Math.ceil(pw / Sd); ih = Math.ceil(ph / Sd);
+      ox = -Math.floor((iw * Sd - pw) / 2); oy = -Math.floor((ih * Sd - ph) / 2);
+      wcv.width = iw; wcv.height = ih;
+      G.Camera.resizePx(iw, ih);
+    } else G.Camera.resize(w, h, dpr);
     checkOrientation();
+  }
+
+  /**
+   * Dibuja el mundo: en modo píxel perfecto, en el lienzo pequeño y ampliado
+   * a un múltiplo entero; si no, directamente con la escala de la cámara.
+   * (drawScene y compañía pintan sobre `ctx`, que aquí se cambia un momento.)
+   */
+  function worldPass(draw) {
+    if (!pix) {
+      ctx.save();
+      ctx.scale(G.Camera.scale, G.Camera.scale);
+      G.Camera.apply(ctx);
+      draw();
+      ctx.restore();
+      return;
+    }
+    const main = ctx;
+    ctx = wctx;
+    wctx.setTransform(1, 0, 0, 1, 0, 0);
+    wctx.clearRect(0, 0, iw, ih);
+    wctx.imageSmoothingEnabled = false;
+    wctx.save();
+    G.Camera.apply(wctx);
+    try { draw(); } finally { wctx.restore(); ctx = main; }
+    main.setTransform(1, 0, 0, 1, 0, 0);
+    main.imageSmoothingEnabled = false;
+    main.drawImage(wcv, 0, 0, iw, ih, ox, oy, iw * Sd, ih * Sd);
+    main.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   /** Móvil en vertical: aviso de girarlo (y pausa). */
@@ -754,15 +799,13 @@ G.Game = (() => {
     ctx.clearRect(0, 0, w, h);
     ctx.imageSmoothingEnabled = false;
 
-    ctx.save();
-    ctx.scale(G.Camera.scale, G.Camera.scale);
-    G.Camera.apply(ctx);
-    drawScene(G.Camera, G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl]);
-    G.Projectiles.draw(ctx);
-    G.Combat.drawAirFields(ctx);
-    G.FX.draw(ctx);
-    G.Judgment.drawAir(ctx);
-    ctx.restore();
+    worldPass(() => {
+      drawScene(G.Camera, G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl]);
+      G.Projectiles.draw(ctx);
+      G.Combat.drawAirFields(ctx);
+      G.FX.draw(ctx);
+      G.Judgment.drawAir(ctx);
+    });
 
     G.Weather.draw(ctx, w, h, frameDt);
     G.World.drawVignette(ctx, w, h);
@@ -870,11 +913,7 @@ G.Game = (() => {
       step(dt);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.imageSmoothingEnabled = false;
-      ctx.save();
-      ctx.scale(G.Camera.scale, G.Camera.scale);
-      G.Camera.apply(ctx);
-      drawScene(G.Camera, wanderers);
-      ctx.restore();
+      worldPass(() => drawScene(G.Camera, wanderers));
       G.World.drawVignette(ctx, w, h);
     }
 
