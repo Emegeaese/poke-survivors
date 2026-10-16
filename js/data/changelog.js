@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Iconos de movimientos con el arte pixel de Pokémon Survivors, emparejados uno a uno con los nuestros (los potenciadores y Sustituto conservan el suyo).",
+     "Move icons now use the Pokémon Survivors pixel art, matched one by one with ours (buffs and Substitute keep theirs)."],
     ["Iconos de objetos, Poké Ball, baya, imán y monedas con el arte pixel de Pokémon Survivors (MIT, pedrobarretto).",
      "Item, Poké Ball, berry, magnet and coin icons now use the pixel art from Pokémon Survivors (MIT, pedrobarretto)."],
     ["Subir de nivel como en Pokémon Survivors: panel más estrecho, \"X subió a Nv N\", carta elegida con borde rojo (flechas + Intro o 1-3), etiqueta ¡NUEVO! y la receta de evolución (movimiento + objeto de tipo). Nuevas Poké Balls por el mapa con premio sorpresa: baya, imán, bomba, monedas, experiencia u objeto.",

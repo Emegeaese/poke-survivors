@@ -58,7 +58,7 @@ G.ArtPS = (() => {
     silkscarf: 'silkScarf', poisonbarb: 'poisonBarb', sharpbeak: 'sharpBeak', nevermeltice: 'neverMeltIce', hardstone: 'hardStone',
     silverpowder: 'silverPowder', dragonfang: 'dragonFang', magnet: 'magnet'
   };
-  const mk = (rows, pal) => {
+  const mk = (rows, pal, min = 10) => {
     const w = Math.max(...rows.map(r => r.length)), h = rows.length;
     const sil = document.createElement('canvas'); sil.width = w; sil.height = h;
     const sc = sil.getContext('2d');
@@ -71,7 +71,7 @@ G.ArtPS = (() => {
     for (const [dx, dy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) o.drawImage(dark, dx, dy);
     o.drawImage(sil, 1, 1);
     // cuadrado, centrado
-    const size = Math.max(out.width, out.height, 10);
+    const size = Math.max(out.width, out.height, min);
     const sq = document.createElement('canvas'); sq.width = size; sq.height = size;
     sq.getContext('2d').drawImage(out, Math.floor((size - out.width) / 2), Math.floor((size - out.height) / 2));
     return sq;
@@ -81,7 +81,8 @@ G.ArtPS = (() => {
   function get(name) {
     if (cache.has(name)) return cache.get(name);
     let cv = null;
-    if (PICK[name]) cv = mk(PICK[name][0], PICK[name][1]);
+    if (name.startsWith('move:')) cv = G.ArtPS.moveIcon ? G.ArtPS.moveIcon(name.slice(5)) : null;
+    else if (PICK[name]) cv = mk(PICK[name][0], PICK[name][1]);
     else {
       const k = ALIAS[name], a = k && (ITEM_ART[k] || ITEM_ART_EXTRA[k]);
       if (a) cv = mk(a[0], a[1]);
@@ -89,5 +90,5 @@ G.ArtPS = (() => {
     cache.set(name, cv);
     return cv;
   }
-  return { get };
+  return { get, mk };
 })();
