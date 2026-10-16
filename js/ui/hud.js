@@ -97,7 +97,27 @@ G.HUD = (() => {
 
   // Retrato de tu Pokémon (animación Idle a 1 píxel de arte = 1 px de pantalla).
   let hudAnim = null, hudAnimKey = '', hudAnimT = 0;
+  // Retratos de SpriteCollab (40x40): assets/pokemon/portrait/0004.png (y 0004s.png, shiny).
+  const PORT = new Map();
+  function portraitImg(dex, shiny) {
+    const P = G.PORTRAITS;
+    const sh = shiny && P && P.s.has(dex);
+    if (!P || !(sh ? P.s : P.n).has(dex)) return null;
+    const k = String(dex).padStart(4, '0') + (sh ? 's' : '');
+    let im = PORT.get(k);
+    if (!im) { im = new Image(); im.src = 'assets/pokemon/portrait/' + k + '.png'; PORT.set(k, im); }
+    return im.complete && im.naturalWidth ? im : null;
+  }
   function portrait(ctx, pl, x, y, w, h) {
+    const im = portraitImg(pl.mon.dex, pl.shiny);
+    if (im) {
+      const prev = ctx.imageSmoothingEnabled;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(im, x, y, w, h);
+      ctx.imageSmoothingEnabled = prev;
+      return;
+    }
+
     const key = pl.mon.dex + (pl.shiny ? 's' : '');
     // Primer plano de la cara, como la tarjeta del otro juego: el sprite grande y recortado.
     const bh = Math.max(16, G.Sprites.bodyHeight(pl.mon.dex));
