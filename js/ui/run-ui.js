@@ -102,6 +102,8 @@ G.RunUI = (() => {
         <div style="font-size:12px;color:var(--muted)">${r.breakdown}</div></div>
       ${r.t1 || r.t10 ? `<div style="grid-column:1/-1"><span>Tickets del gacha</span><b>
         ${r.t1 ? G.Icons.html('ticket', 22) + ' +' + r.t1 + ' ' : ''}${r.t10 ? G.Icons.html('ticket10', 22) + ' +' + r.t10 + ' ×10' : ''}</b></div>` : ''}
+      ${r.eggs && (r.eggs.steps || r.eggs.found) ? `<div style="grid-column:1/-1"><span>${G.Icons.html('egg', 16)} Huevos</span><b style="font-size:15px">
+        ${r.eggs.steps.toLocaleString('es')} pasos${r.eggs.found ? ' · ' + r.eggs.found + (r.eggs.found === 1 ? ' huevo nuevo' : ' huevos nuevos') : ''}${r.eggs.ready ? ' · <span class="gold">' + r.eggs.ready + (r.eggs.ready === 1 ? ' listo para abrir' : ' listos para abrir') + '</span>' : ''}</b></div>` : ''}
       <div style="grid-column:1/-1"><span>Movimientos</span><b style="font-size:15px">
         ${r.moves.map(m => `${G.Icons.html('move:' + m.id, 16)} ${m.name} Nv.${m.lvl}`).join(' · ') || '—'}</b></div>
       ${r.caught && r.caught.length ? `<div style="grid-column:1/-1" class="caught"><span>${G.Icons.html('shiny', 12)} Shinies conseguidos</span>

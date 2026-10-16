@@ -16,6 +16,10 @@ G.Icons = (() => {
                  '..kmwmmmnk..', '.kmwmsmmmnk.', '.kmmsssmmnk.', '.kmmmsmmmnk.', '..kmmmmmnk..', '...kkkkkk...'];
 
   const UI = {
+    // Huevo (incubadora).
+    egg: { pal: { w: '#f6efd8', s: '#d9cba0', g: '#8fd18a', h: '#ffffff' }, rows: [
+      '....kkkk....', '...kwhwwk...', '..kwhwwwsk..', '..kwwgwwsk..', '.kwwgggwwsk.', '.kwwwgwwwsk.',
+      '.kwwwwwwwsk.', '.kwgwwwwwsk.', '.kwgggwwwsk.', '..kwgwwwsk..', '...kssssk...', '....kkkk....'] },
     gear: { pal: { g: '#c9d6ff', d: '#7f93c9' }, rows: [
       '....kkkk....', '.kk.kggk.kk.', '.kgkkggkkgk.', '..kggggggk..', 'kkggkkkkggkk', 'kgggk..kgddk',
       'kgggk..kgddk', 'kkggkkkkddkk', '..kggddddk..', '.kgkkddkkdk.', '.kk.kddk.kk.', '....kkkk....'] },

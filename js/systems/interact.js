@@ -41,7 +41,7 @@ G.Interact = (() => {
           if (!pl.dead && d2 < Math.max(46, p.r + pl.r + 24) ** 2) {
             if (p.open === 0) G.Audio.sfx('select');
             p.open += dt;
-            if (p.open >= CHEST_TIME) { p.open = 0; G.World.breakProp(p); }
+            if (p.open >= CHEST_TIME) { p.open = 0; G.Eggs.roll('chest'); G.World.breakProp(p); }
           } else if (p.open > 0) p.open = Math.max(0, p.open - dt * 1.5);
           break;
         case 'trap':

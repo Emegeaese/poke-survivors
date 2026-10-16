@@ -576,5 +576,16 @@ G.I18n.add({
   // ---------------- reportar marcas del ranking ----------------
   'Reportar marca sospechosa': 'Report suspicious record', 'Ya la has reportado': 'You already reported it',
   'Ya has reportado esta marca': 'You already reported this record',
-  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it'
+  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it',
+
+  // ---------------- huevos ----------------
+  'Huevos': 'Eggs', 'Incubadora': 'Incubator', 'Incubadora · se abren caminando': 'Incubator · they hatch as you walk',
+  'Vacío': 'Empty', '¡Abrir!': 'Open!', 'En camino': 'On the way', 'Continuar': 'Continue',
+  '1 huevo listo para abrir': '1 egg ready to open', '1 huevo en camino': '1 egg on the way',
+  'Huevo común': 'Common egg', 'Huevo raro': 'Rare egg', 'Huevo épico': 'Epic egg',
+  'Común': 'Common', 'Raro': 'Rare', 'Épico': 'Epic',
+  '¡Has encontrado un huevo común!': 'You found a common egg!', '¡Has encontrado un huevo raro!': 'You found a rare egg!', '¡Has encontrado un huevo épico!': 'You found an epic egg!',
+  'Los huevos eclosionan con los <b>pasos</b> que das jugando (16 px = 1 paso): se suman al acabar cada partida.<br>': 'Eggs hatch with the <b>steps</b> you take while playing (16 px = 1 step): they are added when each run ends.<br>',
+  'Huevos encontrados': 'Eggs found', 'abiertos': 'opened', 'pasos totales': 'total steps', 'pasos': 'steps',
+  '¡SHINY NUEVO!': 'NEW SHINY!', '¡NUEVO!': 'NEW!'
 });

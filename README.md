@@ -72,6 +72,7 @@ jefe, la captura de un shiny salvaje y un shiny en el gacha.
   **Amigos** (añadir por apodo, invitar a tu sala) y **Ranking** (tiempo
   aguantado: solo o grupo, de hoy a histórico, amigos, por Pokémon).
 - **Repetidos e intercambios:** un Pokémon repetido del gacha queda como copia (×2, ×3...). En la ficha puedes **venderla** (nunca la última) o conservarla. En **Amigos → Intercambiar** das un Pokémon y recibes otro, siempre uno por uno, también shiny. Necesita las reglas de `firestore.rules` publicadas.
+- **Huevos:** caen de jefes, cofres con candado y legendarios de grieta (máx. 2 por partida, el primero seguro) y van a una incubadora de 3 espacios. Eclosionan con los pasos que andas jugando (2.000 / 4.000 / 8.000 según el tipo). Idea tomada de [Pokémon Survivors](https://github.com/pedrobarretto/pokemon-survivors) (MIT).
 - **Publicar gratis en GitHub Pages:** [docs/PUBLICAR.md](docs/PUBLICAR.md).
 - Si se juega en dos ordenadores a la vez o sin conexión, las partidas se
   **fusionan**: las colecciones se unen (nunca se pierde un Pokémon ni un

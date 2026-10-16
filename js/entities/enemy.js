@@ -907,7 +907,7 @@
         if (e.remote) continue;
         if (e.dead) {
           pl.kills++;
-          if (e.boss && !e.judge) pl.bosses++;
+          if (e.boss && !e.judge) { pl.bosses++; G.Eggs.roll('boss'); }
           G.Progress.kill(e);
           corpses.push(e);
           list.splice(i, 1);

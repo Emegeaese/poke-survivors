@@ -79,6 +79,8 @@ G.DB = (() => {
       gone: {},               // dex -> fecha: ya no tienes ninguna copia normal (evita que la fusión la devuelva)
       goneS: {},              // lo mismo para los shiny
       tx: {},                 // intercambios ya aplicados: id -> clave (para no aplicarlos dos veces)
+      eggs: [],               // huevos de la incubadora: { id, tier 0-2, steps } (systems/eggs.js)
+      eggGone: {},            // id -> fecha: huevos ya abiertos (la fusión de partidas no los devuelve)
       partner: null,          // dex del Pokémon con el que juegas
       partnerShiny: false,    // jugar con su versión shiny (si la tienes)
       starter: null,          // dex que te tocó en el test
@@ -95,7 +97,7 @@ G.DB = (() => {
       missions: {},           // misiones del día / semana (systems/progress.js)
       profile: { favs: [], title: '' },   // perfil público: 3 favoritos y título
       stats: { runs: 0, bestTime: 0, bestLevel: 0, totalKills: 0, pulls: 0, coinsEarned: 0, shinies: 0,
-               bossesTotal: 0, riftWins: 0, evolutions: 0, missionsDone: 0, groupRuns: 0, bestGroupTime: 0 }
+               bossesTotal: 0, eggsFound: 0, hatched: 0, steps: 0, riftWins: 0, evolutions: 0, missionsDone: 0, groupRuns: 0, bestGroupTime: 0 }
     };
   }
 
@@ -143,6 +145,11 @@ G.DB = (() => {
     if (G.DEX_BY) for (const coll of ['owned', 'shiny']) {
       for (const d of Object.keys(s[coll] || {})) if (!G.DEX_BY[d]) delete s[coll][d];
     }
+    // Huevos: lista de objetos válidos, con los pasos dentro del tope de su tipo.
+    const TOT = [2000, 4000, 8000];
+    s.eggs = (Array.isArray(s.eggs) ? s.eggs : []).filter(e => e && typeof e.id === 'string' && e.id.length < 40 && TOT[e.tier | 0])
+      .slice(0, 12).map(e => ({ id: e.id, tier: e.tier | 0, steps: Math.min(TOT[e.tier | 0], n(e.steps)) }));
+    if (!isObj(s.eggGone)) s.eggGone = {};
     // Atajos: 4 huecos con un movimiento que exista (o null), sin repetir.
     if (s.pbind && typeof s.pbind === 'object') {
       for (const d of Object.keys(s.pbind)) {
@@ -266,6 +273,16 @@ G.DB = (() => {
       for (const k in gm) if (r[coll][k] && (r[coll][k].at || 0) <= gm[k]) delete r[coll][k];
     }
     r.tx = Object.assign({}, older.tx, r.tx);
+    // Huevos: unión por id (de los pasos, el mayor); los ya abiertos no vuelven.
+    r.eggGone = Object.assign({}, older.eggGone, r.eggGone);
+    for (const k in older.eggGone || {}) r.eggGone[k] = Math.max(r.eggGone[k] || 0, older.eggGone[k] || 0);
+    const eggs = new Map();
+    for (const e of [...(older.eggs || []), ...(r.eggs || [])]) {
+      if (!e || !e.id || r.eggGone[e.id]) continue;
+      const p = eggs.get(e.id);
+      eggs.set(e.id, p ? Object.assign({}, p, e, { steps: Math.max(p.steps || 0, e.steps || 0) }) : e);
+    }
+    r.eggs = [...eggs.values()];
     for (const k in older.upgrades || {}) r.upgrades[k] = Math.max(r.upgrades[k] || 0, older.upgrades[k]);
     r.pupg = r.pupg || {};
     for (const d in older.pupg || {}) {

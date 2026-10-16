@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Huevos: caen de jefes, cofres con candado y legendarios de las grietas (hasta 2 por partida; el primero es seguro). Van a la incubadora (3 espacios) y eclosionan con los pasos que andas jugando: 2.000, 4.000 u 8.000 según el tipo. Sale cualquiera de tus Pokémon según la rareza del huevo, y 1 de cada 100 es shiny. Los repetidos quedan como copias.",
+     "Eggs: they drop from bosses, locked chests and rift legendaries (up to 2 per run; the first one is guaranteed). They go into the incubator (3 slots) and hatch with the steps you walk while playing: 2,000, 4,000 or 8,000 depending on the type. Any of your Pokémon can come out, depending on the egg rarity, and 1 in 100 is shiny. Duplicates stay as copies."],
     ["Intercambios: en Amigos > Intercambiar das un Pokémon (normal o shiny) y recibes otro, siempre uno por uno. Los dos tenéis que aceptar.",
      "Trades: in Friends > Trade you give one Pokémon (normal or shiny) and get another, always one for one. Both players must accept."],
     ["Los repetidos del gacha ya no se convierten en monedas: quedan como copias (×2, ×3...). En la ficha puedes venderlas (nunca la última) o guardarlas para intercambiar.",

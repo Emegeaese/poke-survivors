@@ -123,6 +123,7 @@
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
+        <button class="menu-item" data-go="eggs">Huevos<small id="menu-eggs-sub">Incubadora · se abren caminando</small></button>
         <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
         <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, hasta 4</small></button>
         <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
@@ -439,6 +440,22 @@
   </div>
 </section>
 
+<!-- ====== Incubadora ====== -->
+<section id="scr-eggs" class="scr dim hidden">
+  <div class="box wide">
+    <div class="row between"><h2>Incubadora</h2><button class="btn small ghost" id="eggs-close">Volver</button></div>
+    <p class="sub" id="eggs-info"></p>
+    <div class="egg-slots" id="eggs-slots"></div>
+    <p class="note center" id="eggs-stats"></p>
+  </div>
+</section>
+
+<div id="egg-fx" class="hidden">
+  <div id="egg-stage" class="egg-stage"></div>
+  <div id="egg-card" class="hidden"></div>
+  <button id="egg-ok" class="btn gold hidden">Continuar</button>
+</div>
+
 <div id="pull-fx" class="hidden">
   <canvas id="slot" width="176" height="170" title="Clic para acelerar"></canvas>
   <div class="pull-results" id="pull-results"></div>
@@ -498,6 +515,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=324550dc7f"></script>
+<script defer src="js/app.min.js?v=0f6450784e"></script>
 </body>
 </html>
