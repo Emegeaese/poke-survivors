@@ -500,6 +500,28 @@ G.HUD = (() => {
       }
     }
 
+    // ---------- Impulso (Espacio): recarga y tecla, a la derecha de los movimientos ----------
+    {
+      const D = 46, dx = sx + totalW + 16 + (pl.bonds > 0 ? 40 : 0), dy = sy + (S - D) / 2;
+      const col = G.U.TYPE_COLOR[pl.mon.types[0]];
+      const ready = pl.dashCd <= 0 && !pl.dead;
+      const pulse = ready && Math.floor(performance.now() / 450) % 2 === 0;
+      pxBox(ctx, dx, dy, D, D, '#10172b', ready ? (pulse ? '#ffffff' : col) : '#3a4670');
+      G.Icons.draw(ctx, 'type:' + pl.mon.types[0], dx + (D - 28) / 2, dy + (D - 28) / 2 - 3, 28);
+      if (!ready && pl.dashCd > 0) {
+        // recarga: se vacía de arriba abajo
+        ctx.save(); ctx.beginPath(); ctx.rect(dx + 2, dy + 2, D - 4, D - 4); ctx.clip();
+        ctx.fillStyle = 'rgba(8,8,20,.62)';
+        ctx.fillRect(dx, dy, D, D * G.U.clamp(pl.dashCd / pl.dashTotal, 0, 1));
+        ctx.restore();
+      }
+      ctx.font = GBA() ? PS(6) : F(800, 8);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = ready ? '#ffffff' : '#8fa3c4';
+      ctx.fillText(touch ? 'DASH' : 'ESPACIO', dx + D / 2, dy + D - 4);
+      G.Touch.addButton(dx, dy, D, D, () => { if (G.Game.state === 'playing') pl.tryDash(); }, 8);
+    }
+
     // ---------- botón de pausa (táctil) ----------
     if (touch) {
       const sa = G.Touch.safeArea();

@@ -131,11 +131,20 @@ G.Pickups = (() => {
       const mag2 = pl.magnet * pl.magnet;
 
       if (p.pulled || d2 < mag2) {
-        p.pulled = true;
         const d = Math.sqrt(d2) || 1;
-        const pull = 240 + 1400 / d;
-        p.vx = G.U.damp(p.vx, (dx / d) * pull, 7, dt);
-        p.vy = G.U.damp(p.vy, (dy / d) * pull, 7, dt);
+        if (!p.pulled) {
+          // Primero un saltito hacia atrás y luego acelera hacia ti (como en Pokémon Survivors).
+          p.pulled = true;
+          if (p.kind === 'xp' || p.kind === 'xpBig') { p.hop = 0.12; p.vx = -(dx / d) * 120; p.vy = -(dy / d) * 120; }
+        }
+        if (p.hop > 0) {
+          p.hop -= dt;
+          p.vx *= Math.pow(0.03, dt); p.vy *= Math.pow(0.03, dt);
+        } else {
+          const pull = 240 + 1400 / d;
+          p.vx = G.U.damp(p.vx, (dx / d) * pull, 7, dt);
+          p.vy = G.U.damp(p.vy, (dy / d) * pull, 7, dt);
+        }
       } else {
         p.vx *= Math.pow(0.02, dt);
         p.vy *= Math.pow(0.02, dt);
@@ -151,9 +160,42 @@ G.Pickups = (() => {
     }
   }
 
+  // ---- gemas de experiencia pixel art (estilo GBA): 4 tamaños según su valor ----
+  // k contorno · b cuerpo · h brillo · s sombra
+  const GEMS = [
+    { rows: ['..k..', '.kbk.', 'kbhbk', '.kbk.', '..k..'], b: '#4898e8', h: '#a8e4ff', s: '#2a62b8' },
+    { rows: ['...k...', '..kbk..', '.kbhbk.', 'kbbhbbk', '.kbbbk.', '..kbk..', '...k...'], b: '#48c8a8', h: '#b8ffe8', s: '#208870' },
+    { rows: ['....k....', '...kbk...', '..kbhbk..', '.kbbhbbk.', 'kbbbhbbbk', '.kbbbbbk.', '..kbbbk..', '...kbk...', '....k....'], b: '#f8c848', h: '#fff4b0', s: '#c08818' },
+    { rows: ['.....k.....', '....kbk....', '...kbhbk...', '..kbbhbbk..', '.kbbbhbbbk.', 'kbbbbhbbbbk', '.kbbbbbbbk.', '..kbbbbbk..', '...kbbbk...', '....kbk....', '.....k.....'], b: '#e868d8', h: '#ffd0f8', s: '#a02890' }
+  ];
+  const gemCv = [];
+  function gemCanvas(tier) {
+    if (gemCv[tier]) return gemCv[tier];
+    const g = GEMS[tier], n = g.rows.length, cv = document.createElement('canvas');
+    cv.width = n; cv.height = n;
+    const c = cv.getContext('2d');
+    g.rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.') return;
+      c.fillStyle = ch === 'k' ? '#182030' : ch === 'h' ? g.h : (x > n / 2 && y > n / 2 ? g.s : g.b);
+      c.fillRect(x, y, 1, 1);
+    }));
+    return (gemCv[tier] = cv);
+  }
+  const gemTier = v => v >= 40 ? 3 : v >= 10 ? 2 : v >= 3 ? 1 : 0;
+
   function draw(ctx) {
+    const gba = G.Settings.get('skin') !== 'classic';
     for (const p of list) {
       if (!G.Camera.sees(p.x, p.y, 30)) continue;
+      if (gba && (p.kind === 'xp' || p.kind === 'xpBig')) {
+        const cv = gemCanvas(gemTier(p.value)), S = cv.width * 2;
+        const gx = Math.round(p.x / 2) * 2, gy = Math.round((p.y - 6 - (Math.floor(p.t * 0.25) % 2) * 2) / 2) * 2;
+        ctx.globalAlpha = 0.3; ctx.fillStyle = '#000';
+        ctx.fillRect(gx - S / 2 + 2, Math.round(p.y / 2) * 2 - 1, S - 4, 2);
+        ctx.globalAlpha = 1;
+        ctx.drawImage(cv, gx - S / 2, gy - S / 2, S, S);
+        continue;
+      }
       const k = KIND[p.kind];
       const bounce = Math.abs(Math.sin(p.t * 0.8)) * 3;
       const r = k.r;

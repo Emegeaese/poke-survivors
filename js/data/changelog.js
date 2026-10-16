@@ -5,6 +5,10 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Impulso (barra espaciadora): un dash corto con invulnerabilidad, una estela que daña y una explosión al final. Se recarga en 8 s (menos con Reflejos, mínimo 4 s) y su recarga sale junto a tus poderes. En móvil, toca su botón.",
+     "Dash (space bar): a short dash with invulnerability, a damaging trail and an explosion at the end. It recharges in 8 s (less with Reflexes, minimum 4 s) and its cooldown shows next to your powers. On mobile, tap its button."],
+    ["Fondos de color del tipo detrás de cada Pokémon (menú, colección, gacha y huevos), gemas de experiencia pixel art de 4 tamaños que dan un saltito antes de volar hacia ti.",
+     "Type-colored backgrounds behind every Pokémon (menu, collection, gacha and eggs) and pixel-art XP gems in 4 sizes that hop before flying to you."],
     ["Mundo más claro y plano, como en Pokémon Survivors: verdes suaves, caminos de tierra más pequeños y números de daño con letra pixel y contorno. Nueva opción en Ajustes > Zoom de la cámara: Cerca (sprites grandes) o Lejos (sprites a la mitad y el doble de mapa a la vista; salen más enemigos).",
      "Lighter, flatter world, like Pokémon Survivors: soft greens, smaller dirt paths and damage numbers in a pixel font with an outline. New option in Settings > Camera zoom: Near (big sprites) or Far (half-size sprites and twice as much map in view; more enemies spawn)."],
     ["Interfaz estilo Game Boy Advance (basada en Pokémon Survivors): paneles claros con doble marco, letras Press Start 2P y VT323, selección con ▶ rojo, barras de dos tonos y HUD a juego. Se puede volver al estilo clásico en Ajustes > Estilo de la interfaz.",

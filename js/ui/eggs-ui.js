@@ -139,6 +139,7 @@ G.EggsUI = (() => {
     const mon = G.DEX_BY[res.dex];
     card.className = 'pcard r' + res.rarity + (res.shiny ? ' shiny' : '');
     card.style.setProperty('--rc', res.shiny ? '#9ae6ff' : G.Gacha.RARITY_COLOR[res.rarity]);
+    card.style.setProperty('--stage-c', G.U.TYPE_COLOR[mon.types[0]]);
     card.innerHTML = `<div class="stars">${G.UI.stars(res.rarity, 24)}</div>`;
     card.appendChild(G.UI.spriteCanvas(res.dex, 150, 140, { lively: true, scale: 2, shiny: res.shiny }));
     const tag = res.isNew ? `<span class="new">${res.shiny ? '¡SHINY NUEVO!' : '¡NUEVO!'}</span>` : `Repetido ×${res.copies} · guardado`;

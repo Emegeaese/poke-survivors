@@ -69,6 +69,11 @@ G.Player = class Player {
     this.dead = false;
     this.power = null;         // poder de altar activo: { def, t, dur }
     this.slowT = 0;            // pegado por una trampa
+    this.dashT = 0;            // Impulso (Espacio): tiempo que le queda al dash en marcha
+    this.dashCd = 0;           // recarga del Impulso
+    this.dashTotal = 1;        // recarga total (para la barra del HUD)
+    this.dashAng = 0;
+    this.dashId = 0;
     this.item = null;          // objeto equipado (data/items.js), uno por run
     this.sashT = -999;         // última vez que salvó la Banda Focus
     this.bellHeal = 0;         // curación pendiente del Cascabel Concha
@@ -330,9 +335,13 @@ G.Player = class Player {
 
     // --- movimiento con colisiones ---
     // (En cooperativo la pausa no para el juego: sólo te quedas quieto.)
-    const [ax, ay] = this.frozen ? [0, 0] : G.Input.axis();
+    let [ax, ay] = this.frozen ? [0, 0] : G.Input.axis();
+    let s = this.spd;
+    const dashing = this.dashT > 0;
+    if (dashing) { ax = Math.cos(this.dashAng); ay = Math.sin(this.dashAng); s = Player.DASH.dist / Player.DASH.time; }
+    if (this.dashCd > 0) this.dashCd -= dt;
     this.walking = ax !== 0 || ay !== 0;
-    const s = this.spd;
+    const px0 = this.x, py0 = this.y;
     // Hielo: resbalas (la velocidad cambia despacio).
     const slide = this.inLiquid && G.World.liquidEffect(this.mon.types).slide;
     this.svx = slide ? G.U.damp(this.svx || 0, ax * s * 1.15, 1.6, dt) : ax * s;
@@ -341,6 +350,11 @@ G.Player = class Player {
     this.y += this.svy * dt;
     G.World.collide(this);
     if (this.walking) this.moveAngle = Math.atan2(ay, ax);
+    if (dashing) {
+      this.dashT -= dt;
+      G.Combat.dashStep(this, px0, py0);
+      if (this.dashT <= 0) { this.dashT = 0; G.Combat.dashEnd(this); }
+    }
 
     // --- terreno líquido ---
     this.inLiquid = G.World.isLiquid(this.x, this.y);
@@ -383,13 +397,33 @@ G.Player = class Player {
     this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? s / 110 : 1);
   }
 
+  /**
+   * Impulso (barra espaciadora): un dash corto en la dirección en que te mueves
+   * (o hacia donde miras), con invulnerabilidad, una estela que daña y una
+   * explosión al final. Idea tomada de "Pokémon Survivors" (MIT).
+   */
+  static get DASH() { return { time: 0.3, dist: 250, cd: 8, minCd: 4, ifr: 0.55 }; }
+
+  tryDash() {
+    if (this.dead || this.dashT > 0 || this.dashCd > 0 || this.frozen) return false;
+    const [ax, ay] = G.Input.axis();
+    this.dashAng = (ax || ay) ? Math.atan2(ay, ax) : this.moveAngle;
+    this.dashT = Player.DASH.time;
+    this.dashTotal = Math.max(Player.DASH.minCd, Player.DASH.cd * this.cdMul);
+    this.dashCd = this.dashTotal;
+    this.dashId++;
+    this.invuln = Math.max(this.invuln || 0, Player.DASH.ifr);
+    G.Combat.dashStart(this);
+    return true;
+  }
+
   /** Vuelve a levantarse (lo revive un compañero en cooperativo). */
   revive(frac = 0.5) {
     this.dead = false;
     this.hp = Math.max(1, this.maxHp * frac);
     this.invuln = 2;
     this.reviveT = 0;
-    this.frozen = false; this.slowT = 0; this.svx = this.svy = 0;
+    this.frozen = false; this.slowT = 0; this.svx = this.svy = 0; this.dashT = 0;
     this.anim.hold = false;
     this.anim._start('Idle', false);
     G.FX.ring(this.x, this.y, 6, 70, '#5fe08a', 0.5, 4);

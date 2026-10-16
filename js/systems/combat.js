@@ -538,6 +538,45 @@ G.Combat = (() => {
     if (m.slow) e.applySlow(m.slow);
   }
 
+  // ---------------- Impulso (Espacio) ----------------
+  // El dash lo mueve Player.update; aquí van el daño de la estela, la explosión y los efectos.
+  const dashType = pl => pl.mon.types[0];
+  const dashDmg = pl => (20 + pl.level * 1.2) * pl.atk;
+
+  function dashStart(pl) {
+    const col = G.U.TYPE_COLOR[dashType(pl)];
+    G.FX.ring(pl.x, pl.y, pl.r, pl.r * 3.2, col, 0.25, 3);
+    G.Audio.sfx('select');
+  }
+
+  /** Cada fotograma del dash: estela y daño a lo que cruza (una vez por enemigo y dash). */
+  function dashStep(pl, x0, y0) {
+    const col = G.U.TYPE_COLOR[dashType(pl)];
+    const dx = pl.x - x0, dy = pl.y - y0, L = Math.hypot(dx, dy);
+    if (L < 0.01) return;
+    const ca = dx / L, sa = dy / L, m = { type: dashType(pl) };
+    G.FX.burst(pl.x, pl.y - pl.bodyH * 0.4, col, 2, 60);
+    for (let d = 0; d <= L; d += 12) G.FX.px(x0 + ca * d, y0 + sa * d - G.LIFT * 0.4, col, { life: 0.28, vy: -10 });
+    for (const e of G.EnemyMgr.queryCircle((x0 + pl.x) / 2, (y0 + pl.y) / 2, L / 2 + 36)) {
+      if (e._dash === pl.dashId || segDist2(x0, y0, pl.x, pl.y, e.x, e.y) > (22 + e.r) ** 2) continue;
+      e._dash = pl.dashId;
+      hit(pl, e, dashDmg(pl) * 0.6, col, ca, sa, 140, m);
+    }
+    G.Camera.kick(0.05);
+  }
+
+  /** Al acabar el dash: explosión alrededor. */
+  function dashEnd(pl) {
+    const col = G.U.TYPE_COLOR[dashType(pl)], r = 62, m = { type: dashType(pl) };
+    G.FX.ring(pl.x, pl.y, 10, r, col, 0.4, 4);
+    G.FX.burst(pl.x, pl.y - pl.bodyH * 0.4, col, 14, 160);
+    for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, r + 30)) {
+      if (G.U.dist2(e.x, e.y, pl.x, pl.y) > (r + e.r) ** 2) continue;
+      hit(pl, e, dashDmg(pl) * 1.2, col, e.x - pl.x, e.y - pl.y, 260, m);
+    }
+    G.Camera.kick(0.25);
+  }
+
   // ---------------- colisiones ----------------
 
   /** Distancia² del punto (cx, cy) al segmento (ax, ay)-(bx, by). */
@@ -671,6 +710,6 @@ G.Combat = (() => {
     }
   }
 
-  return { tick, resolve, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields,
+  return { tick, resolve, dashStart, dashStep, dashEnd, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields,
            get fieldCount() { return fields.length; } };
 })();

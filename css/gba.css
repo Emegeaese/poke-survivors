@@ -246,3 +246,15 @@ body.gba {
 .gba .pips i.on { background: #48c048; }
 .gba .upg-item .ic { background: var(--dark); border-radius: 6px; }
 .gba .upg-head .stage { margin: 0; }
+
+/* ---------- fondos de los Pokémon: óvalo pastel del color de su tipo (como en la selección del otro juego) ---------- */
+.gba .stage {
+  background:
+    radial-gradient(ellipse 46% 58% at 50% 58%, color-mix(in srgb, var(--stage-c, #6878a8) 40%, #ffffff) 0 66%, transparent 68%),
+    radial-gradient(ellipse 60% 72% at 50% 58%, color-mix(in srgb, var(--stage-c, #6878a8) 22%, #283048) 0 100%),
+    var(--dark);
+}
+.gba .cell canvas, .gba .pcard canvas, .gba .tr-slot canvas {
+  background: radial-gradient(ellipse 44% 56% at 50% 62%, color-mix(in srgb, var(--stage-c, #8a94b8) 42%, #ffffff) 0 70%, transparent 72%);
+}
+.gba .cell.locked canvas { background: radial-gradient(ellipse 44% 56% at 50% 62%, #b4b8cc 0 70%, transparent 72%); }

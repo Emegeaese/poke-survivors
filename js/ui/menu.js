@@ -212,6 +212,7 @@ G.MenuUI = (() => {
 
       const cell = document.createElement('div');
       cell.className = 'cell' + (own ? '' : ' locked') + (p.dex === dexSel ? ' on' : '');
+      cell.style.setProperty('--stage-c', own ? G.U.TYPE_COLOR[p.types[0]] : '#8a94b8');
       cell.insertAdjacentHTML('beforeend', `<span class="no">${String(p.dex).padStart(3, '0')}</span>`);
       const nN = G.DB.copies(s, p.dex, false), nS = G.DB.copies(s, p.dex, true);
       if (nN > 1 || nS > 1) {

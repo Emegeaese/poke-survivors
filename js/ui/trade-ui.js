@@ -104,6 +104,7 @@ G.TradeUI = (() => {
       if (q && !p.name.toLowerCase().includes(q) && String(p.dex) !== q) continue;
       const cell = document.createElement('div');
       cell.className = 'cell' + (mine && mine.dex === p.dex && !!mine.sh === shinyTab ? ' on' : '') + (locked ? ' res' : '');
+      cell.style.setProperty('--stage-c', G.U.TYPE_COLOR[p.types[0]]);
       cell.insertAdjacentHTML('beforeend', `<span class="no">${String(p.dex).padStart(3, '0')}</span>`);
       if (n > 1) cell.insertAdjacentHTML('beforeend', `<div class="dups-tags"><span class="dup-n${shinyTab ? ' sh' : ''}">${shinyTab ? G.Icons.html('shiny', 10) : ''}×${n}</span></div>`);
       cell.appendChild(G.UI.spriteCanvas(p.dex, 92, 80, { scale: 2, shadow: true, shiny: shinyTab }));
