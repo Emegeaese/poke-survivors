@@ -82,6 +82,7 @@ G.Player = class Player {
     this.item = null;          // objeto equipado (data/items.js), uno por run
     this.sashT = -999;         // última vez que salvó la Banda Focus
     this.bellHeal = 0;         // curación pendiente del Cascabel Concha
+    this.evoCount = 0;         // evoluciones de Pokémon en esta run
     this.statsTaken = {};      // mejoras de stat cogidas (condición de evolución)
   }
 

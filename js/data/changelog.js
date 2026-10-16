@@ -5,6 +5,8 @@
  */
 G.CHANGELOG = [
   { d: "2026-10-14", title: ["Versión de los amigos: intercambios y repetidos","Friends version: trades and duplicates"], new: [
+    ["Tu Pokémon evoluciona durante la partida: 1.ª evolución al nivel 10, 2.ª al 24 y 3.ª al 40. Toma los stats del nuevo Pokémon, se cura un poco y en cooperativo tus amigos te ven cambiar.",
+     "Your Pokémon evolves during the run: 1st evolution at level 10, 2nd at 24 and 3rd at 40. It takes the new Pokémon's stats, heals a bit, and in co-op your friends see you change."],
     ["Colección con tarjetas: cada Pokémon muestra sus tipos y el panel \"Inspeccionar\" enseña estadísticas, el Impulso (Espacio) y todos los movimientos que puede aprender.",
      "Collection cards: each Pokémon shows its types and the Inspect panel lists stats, the Dash (Space) and every move it can learn."],
     ["Las mejoras (Mejoras) ahora valen para todos tus Pokémon, juegues con el que juegues. Lo que tenías por Pokémon se junta: te quedas con el nivel más alto de cada mejora. El Veto también es para todos.",

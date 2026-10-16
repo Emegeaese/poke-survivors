@@ -746,6 +746,7 @@ G.Game = (() => {
 
     pl.frozen = coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item'));
     pl.update(dt);
+    G.Evo.tick(pl);
     // Pasos para los huevos: lo que andas (no los saltos de teletransporte).
     if (!pl.dead) { if (eggLast) G.Eggs.walk(G.U.dist(pl.x, pl.y, eggLast.x, eggLast.y)); eggLast = { x: pl.x, y: pl.y }; }
     if (coop) {

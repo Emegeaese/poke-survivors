@@ -303,6 +303,7 @@ G.Coop = (() => {
           G.World.breakAt(ev[1], ev[2]);
           emit(['pb', ev[1], ev[2]], from);
           break;
+        case 'ev': G.Evo.apply(m.pl, ev[1], !!ev[2]); emit(['ev', from, ev[1], ev[2]], from); break;
         case 'lp': picked(from); break;
         case 'hs': holdOn(from); break;
         case 'he': holdOff(from); break;
@@ -398,6 +399,7 @@ G.Coop = (() => {
       case 'hp': lastHo = (ev[1] || []).join('|'); api.hold && api.hold(ev[1]); break;
       case 'ha': hostAway = !!ev[1]; updateAway(); break;
       case 'sh': api.shiny(ev[1]); break;
+      case 'ev': { const m = mates.get(ev[1]); if (m) G.Evo.apply(m.pl, ev[2], !!ev[3]); break; }
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
       case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
       case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
@@ -448,6 +450,10 @@ G.Coop = (() => {
     }
   }
 
+  function evolved(pl, dex, shiny) {
+    if (!active || pl !== local) return;
+    if (host) emit(['ev', me, dex, shiny ? 1 : 0]); else outEv.push(['ev', dex, shiny ? 1 : 0]);
+  }
   function shinyCaught(e) { emit(['sh', e.dex]); }
 
   // ---------------- subida de nivel compartida ----------------
@@ -519,7 +525,7 @@ G.Coop = (() => {
   return {
     ANIMS, COLORS, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
-    propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
+    propBroken, collected, shinyCaught, evolved, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },
